@@ -12,11 +12,12 @@
 
 | البند | القرار |
 |---|---|
-| **Frontend** | TanStack Start (Vite + React 18 + TS) — routes تحت `_authenticated/` تعمل client-side |
+| **Frontend** | Vite + React 18 + TypeScript (SPA خالص) |
+| **Routing** | React Router DOM v6 (BrowserRouter + nested routes + loaders) |
 | **Backend** | Supabase (Postgres + Auth + Storage + pg_cron) |
-| **Server Logic المعقد** | Supabase Edge Functions (Email، PDF، orchestration) |
-| **Server Logic البسيط** | `createServerFn` (TanStack) أو مباشرة `supabase.from/rpc` من client |
-| **Auth Guard** | Supabase `auth.uid()` في RLS + `beforeLoad` في الـ routes |
+| **Server Logic المعقد** | Supabase Edge Functions (Email، PDF، orchestration، secrets) |
+| **Server Logic البسيط** | مباشرة `supabase.from/rpc` من الـ client (RLS بتحمي) |
+| **Auth Guard** | Supabase `auth.uid()` في RLS + `<ProtectedRoute>` في React Router |
 | **DB Logic** | Triggers + RPC functions للـ atomic invariants |
 | **State** | TanStack Query v5 (server state) + Zustand (UI state فقط) |
 | **Forms** | react-hook-form + zod |
