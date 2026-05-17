@@ -309,7 +309,7 @@ features/<name>/
 | Mutation | `use<Action><Entity>Mutation` | `useEnrollStudentMutation` |
 | Component | PascalCase | `StudentEnrollmentForm` |
 | Schema | `<entity><Action>Schema` | `enrollmentCreateSchema` |
-| Route | kebab-case | `student-profile.tsx` |
+| Page component | PascalCase + `Page` suffix | `StudentProfilePage.tsx` |
 | Query key factory | `<entity>Keys` | `studentKeys` |
 
 ---
