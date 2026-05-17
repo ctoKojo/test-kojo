@@ -44,24 +44,30 @@
 ### 2.1 Stack الكامل
 
 ```text
-Frontend (TanStack Start):
+Frontend (Vite SPA):
   Vite + React 18 + TypeScript
-  TanStack Router        ← file-based routing + guards
-  TanStack Query v5      ← server state + caching
-  Zustand                ← UI state فقط (modals, sidebar)
-  react-hook-form + zod  ← forms + validation
-  react-i18next          ← i18n + RTL/LTR
-  shadcn/ui + Tailwind   ← components + styling
-  @react-pdf/renderer    ← certificate preview (client)
+  React Router DOM v6     ← routing (BrowserRouter + nested + loaders)
+  TanStack Query v5       ← server state + caching
+  Zustand                 ← UI state فقط (modals, sidebar)
+  react-hook-form + zod   ← forms + validation
+  react-i18next           ← i18n + RTL/LTR
+  shadcn/ui + Tailwind    ← components + styling
+  @react-pdf/renderer     ← certificate preview (client)
 
-Backend (Supabase):
-  PostgreSQL             ← database
-  Supabase Auth          ← authentication + JWT
-  Supabase Storage       ← PDFs, slides
-  Supabase Edge Functions ← business logic معقد، email، PDF
-  pg_cron                ← scheduled jobs
-  Row Level Security     ← authorization layer
+Backend (Supabase — لا server framework من جهتنا):
+  PostgreSQL              ← database
+  Supabase Auth           ← authentication + JWT (في المتصفح مباشرة)
+  Supabase Storage        ← PDFs, slides
+  Supabase Edge Functions ← business logic معقد، email، PDF، secrets
+  pg_cron                 ← scheduled jobs
+  Row Level Security      ← authorization layer (الحماية الأساسية)
 ```
+
+**ليه SPA خالص؟**
+- مفيش server من جهتنا = مفيش client/server boundary = مفيش `process.env` confusion
+- كل secrets في Supabase Edge Functions فقط
+- الـ RLS هي خط الدفاع الأول والأخير
+- نشر أسهل (static hosting) + أرخص
 
 ### 2.2 Data Flow (طبقات صارمة)
 
