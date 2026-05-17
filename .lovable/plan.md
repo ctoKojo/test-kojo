@@ -4,61 +4,29 @@
 
 ---
 
-## 1. القرارات المتفق عليها
+## 1. القرارات المؤكدة
 
 | البند | القرار |
 |---|---|
-| Scope | Schema كامل (4 طبقات) + UI تدريجي |
+| Scope | Schema كامل (4 طبقات) + UI تدريجي على Phases |
 | Online vs Offline | الاتنين بالتوازي |
-| Payments | يدوي الآن، Gateway لاحقاً |
+| Payments | يدوي الآن (cash/visa/transfer)، Gateway لاحقاً |
 | Notifications | In-app + Email فقط |
-| Language | عربي + إنجليزي (i18n + RTL/LTR) |
+| Language | عربي + إنجليزي (i18n + RTL/LTR auto-switch) |
 | Parent ↔ Students | Many-to-many |
-| Entry Test | بنك أسئلة يديره الأدمن (Adaptive MCQ) |
-| Currency | EGP، أسعار مبدئية في seed قابلة للتعديل |
-
----
-
-## 2. النقاط اللي محتاج نتفق عليها قبل البدء
-
-### 2.1 نقاط جوهرية (لازم نحسمها)
-
-1. **مفهوم "الفرع" (Branch):**
-   - فرع جغرافي واحد له خزن وموظفين خاصين به فقط؟
-   - أم Super Admin يقدر ينقل طالب بين فروع؟ (يفتح سيناريوهات معقدة في المالية)
-   - **اقتراحي:** الطالب ينتمي لفرع واحد، النقل يحتاج "Transfer Request" منفصل.
-
-2. **العمولة (Commission):**
-   - الـ doc بيقول "عمولة مرة واحدة عند أول دفعة مؤكدة". مين بياخدها؟ Receptionist اللي سجّل؟ أم الكل؟
-   - النسبة configurable لكل دور أم ثابتة؟
-
-3. **السيشن التعويضية:**
-   - الطالب الغايب يقدر يحضر مع جروب تاني نفس المستوى؟ أم Private session مع المدرب فقط؟
-   - لو حضر مع جروب تاني، الـ attendance يتسجل في الجروبين أم في واحد بس؟
-   - **اقتراحي:** الاتنين متاحين — الـ Receptionist يختار.
-
-4. **منع الطالب من السيشن الجاية:**
-   - "لو ما اخدش تعويضية → يُمنع من الجاية" — المنع automatic بـ trigger ولا الـ Receptionist يقرر؟
-   - الطالب الممنوع لسه بيدفع؟ السيشن بتتعد عليه؟
-
-5. **Trainer Substitution:**
-   - لما المدرب يطلب إجازة، النظام بيقترح بديل أوتوماتيك (بناءً على availability + level) ولا الأدمن يختار يدوي؟
-
-6. **KPIs:**
-   - الحساب الشهري بـ pg_cron — لو الـ weights اتغيرت في نص الشهر، الـ KPI للشهر ده يتحسب بالقديمة ولا الجديدة؟
-   - **اقتراحي:** snapshot للـ weights في `kpi_snapshots` عند بداية كل شهر.
-
-7. **System Policies التاريخية:**
-   - "السياسات الجديدة مالهاش تأثير رجعي" — يعني نخزن `valid_from`/`valid_to` لكل policy ونرجع للقديمة لو الحدث قديم؟
-   - **اقتراحي:** `policy_versions` table + كل حدث مرتبط بـ `policy_version_id`.
-
-### 2.2 نقاط تشغيلية
-
-8. **حذف البيانات:** Soft delete (`deleted_at`) لكل الجداول الأساسية ولا Hard delete؟ **اقتراحي:** Soft للطلاب/الموظفين/الجروبات، Hard للـ logs.
-9. **Audit Trail:** هل نسجل كل تعديل (مين عدّل/إمتى/إيه القيمة القديمة)؟ مهم للماليات. **اقتراحي:** نعم، جدول `audit_logs` عام.
-10. **Files:** صور الطلاب، شهادات، فواتير PDF → Lovable Cloud Storage (buckets منفصلة بـ RLS).
-11. **Certificates:** نولّدها PDF أوتوماتيك عند تخرج الطالب؟ Template موحد؟
-12. **Online content (فيديوهات/سلايدات):** نرفعها على Storage مباشرة ولا CDN خارجي (Vimeo/Bunny)؟ **اقتراحي:** Storage + signed URLs مع expiry قصير لمنع التحميل.
+| Entry Test | بنك أسئلة Adaptive يديره الأدمن، per age_group |
+| Currency | EGP، أسعار مبدئية في seed قابلة للتعديل من Dashboard |
+| **نقل الطالب بين فروع** | Transfer Request رسمي يوافق عليه Admin |
+| **التعويضية** | جروب تاني (نفس level) أو Private — الـ Receptionist يختار |
+| **منع الطالب** | Automatic بـ DB trigger. متسلسل: مش متعوض → منع من اللي بعدها، واللي اتمنع منها تتحسب تعويضية كمان. لو تخطى حد الغيابات → حرمان كامل (يحتاج fee للرجوع) |
+| **العمولة** | للسيلز فقط. نسبة واحدة للفرع يحددها Admin. الـ Receptionist/Admin يعينها على شخص. **مقفولة في نص الشهر** (snapshot شهري) |
+| **Sales Target** | لكل باقة (عدد طلاب) — يدخل في KPIs السيلز |
+| **KPI Weights** | snapshot أول كل شهر — مينفعش تتغير في نص الشهر |
+| **Policies** | snapshot لكل طالب عند بداية دورته (level enrollment). الطالب يكمل بالقواعد القديمة، التغييرات تطبق على الدورات الجديدة |
+| **Soft delete** | مش أولوية → Hard delete + `audit_logs` للحركات المالية والتعديلات المهمة |
+| **Files** | فيديوهات + سلايدات = URLs خارجية، PDFs على Lovable Storage |
+| **Trainer Substitution** | النظام يقترح بدلاء (نفس level + متاح في الـ slot)، Admin أو Reception يختار |
+| **Certificates** | PDF يتولد أوتوماتيك من template موحد عند نجاح الطالب في Final Exam |
 
 ---
 
