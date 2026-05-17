@@ -526,12 +526,170 @@ Route:    kebab-case          (group-sessions.tsx)
 
 ---
 
-## 14. الخلاصة
+## 14. Enterprise Hardening Additions (v2.2)
 
-- **57 جدول** موزعين على 5 طبقات واضحة.
-- **كل scenario** من 30 سيناريو مغطى بـ owner واضح وflow كامل.
-- **Architecture Contract** يمنع السباجيتي مهما كبر المشروع.
-- **Single source of truth** لكل معلومة → صفر drift.
-- **Extension rules** تخلي إضافة أي feature تتم في مسار ثابت معروف.
+كل النقاط دي مدمجة في Phase 0 كـ foundation عشان متبقاش retrofit مؤلم بعدين.
 
-لما توافق على v2.1 هبدأ Phase 0 فوراً.
+### 14.1 Notification Queue (durable + retry-safe)
+
+**المشكلة:** notification inline داخل transaction → لو email provider وقع → transaction تفشل أو notification تضيع.
+
+```text
+RPC (داخل tx): INSERT notification_jobs(status='pending', idempotency_key)
+Worker (cron 30s أو Inngest):
+   SELECT FOR UPDATE SKIP LOCKED LIMIT 50 WHERE status='pending' AND next_attempt_at <= now()
+   → render → send → status='sent' أو attempts++ + exponential backoff
+   → بعد max_attempts (5) → status='dead_letter' + alert admin
+```
+
+**جداول:**
+- `notification_jobs(id, channel[email|inapp], recipient_id, template_key, payload jsonb, status, attempts, next_attempt_at, last_error, idempotency_key, created_at)`
+- `notification_templates(key, channel, subject, body_template, version, locale)`
+- `notification_dead_letter` archive للـ failed
+
+**ممنوع:** أي كود يبعت email/notification مباشرة. كل شيء يعدّي على `fn_enqueue_notification`.
+
+### 14.2 Analytics Abstraction Layer (OLTP ≠ Analytics)
+
+**المشكلة:** KPIs بتتحسب من operational tables مباشرة → بعد 100k records → slow + lock contention.
+
+```text
+OLTP tables → triggers → analytics_events (append-only, partitioned by month)
+            → materialized views (mv_kpi_*) refreshed كل ساعة
+            → reports/dashboards تقرأ من MVs فقط
+```
+
+**جداول:**
+- `analytics_events(id, event_type, entity_type, entity_id, branch_id, term_id, payload jsonb, occurred_at)` — partitioned شهرياً.
+- MVs: `mv_branch_revenue_monthly`, `mv_trainer_performance`, `mv_student_retention`, `mv_group_health`, `mv_attendance_summary`.
+- `analytics_refresh_log` لتتبع الـ refresh.
+
+**Abstraction:** كل KPI query يعدّي على `src/lib/api/analytics.ts` adapter. لو يوماً بدّلنا لـ ClickHouse/BigQuery → نغيّر الـ adapter بس، صفر تأثير على UI.
+
+### 14.3 Search Layer (scale-ready)
+
+**المشكلة:** `ILIKE '%query%'` على 50k rows = full table scan.
+
+```sql
+CREATE EXTENSION pg_trgm;
+CREATE EXTENSION unaccent;
+
+ALTER TABLE students ADD COLUMN search_vector tsvector GENERATED ALWAYS AS (
+  to_tsvector('simple', unaccent(coalesce(full_name,'')||' '||coalesce(phone,'')||' '||coalesce(student_code,'')))
+) STORED;
+CREATE INDEX idx_students_search ON students USING GIN(search_vector);
+CREATE INDEX idx_students_phone_trgm ON students USING GIN(phone gin_trgm_ops);
+```
+
+نفس الباترن على: `parents`, `trainers`, `groups`, `payments`. كل بحث يعدّي على `fn_search_<entity>(query)` موحّد.
+
+### 14.4 File Lifecycle Management
+
+**المشكلة:** uploads بتتراكم → orphans → storage cost ينفجر.
+
+**جداول:**
+- `storage_objects_registry(id, bucket, path, owner_id, entity_type, entity_id, size_bytes, mime, uploaded_at, last_accessed_at, retention_policy_key)`
+- `retention_policies(key, days_to_keep, action[archive|delete], applies_to)` — مثال: `homework_uploads`=180d delete، `session_recordings`=365d archive، `payment_receipts`=2555d keep.
+- `storage_cleanup_jobs` cron يومي ينظف orphans + يطبّق policies.
+
+**القاعدة:** أي upload يعدّي على `fn_register_upload()`. مفيش raw upload مسموح.
+
+### 14.5 Session Change History (Audit Timeline)
+
+**المشكلة:** `version` لوحده ما بيقولش *إيه* اتغيّر، مين، وليه.
+
+```sql
+CREATE TABLE session_change_history (
+  id uuid pk, session_id uuid, changed_by uuid,
+  change_type text, -- reschedule|reassign|close|reopen|grade_edit|attendance_edit
+  before_state jsonb, after_state jsonb,
+  reason text, related_approval_id uuid, changed_at timestamptz
+);
+```
+
+Trigger على UPDATE → diff. نفس الباترن على `payments`, `enrollments`, `student_blocks` (entity_change_history pattern).
+
+### 14.6 Double-Entry Ledger Foundation
+
+**الوضع الحالي:** `treasury_movements` single-entry يكفي لـ MVP. **لكن** نعمل foundation من اليوم الأول.
+
+```text
+accounts_chart(id, code, name, type[asset|liability|revenue|expense|equity], branch_id)
+journal_entries(id, entry_date, description, idempotency_key, posted_by, related_entity)
+ledger_entries(id, journal_entry_id, account_id, debit numeric(14,2), credit numeric(14,2))
+   CONSTRAINT: SUM(debit) = SUM(credit) per journal_entry  ← DB-enforced
+```
+
+**في Phase 0:**
+- `accounts_chart` seeded (Cash, Bank, Revenue:Subscriptions, Expense:Salaries, Liability:DeferredRevenue, AR:Students).
+- `fn_post_journal_entry(entries jsonb[])` مع balance check.
+- `treasury_movements` يصبح **view** فوق ledger_entries أو wrapper RPC يكتب journal entries.
+
+→ reconciliation بين فروع جاهزة من اليوم الأول، صفر pain لاحقاً.
+
+### 14.7 AI Anti-Corruption Layer
+
+**القاعدة:** ممنوع أي AI integration يكتب مباشرة في operational DB. ممنوع AI يحمل service_role key.
+
+```text
+AI service → ai_suggestions(status='pending') → notification للـ reviewer
+          → human approve/reject → on approve: نفس الـ RPC العادي يتنفّذ
+                                              بـ actor_type='ai_assisted' + reviewer_id
+```
+
+**جدول:**
+- `ai_suggestions(id, suggestion_type, target_entity_type, target_entity_id, payload jsonb, confidence numeric, status[pending|approved|rejected|expired], reviewer_id, reviewed_at, rejection_reason, expires_at)`
+
+AI = read + suggest. Writes = human-approved.
+
+### 14.8 Architecture Decision Records (ADRs)
+
+كل قرار معماري كبير يتوثّق:
+
+```text
+docs/adr/
+├── README.md                                    # index + template
+├── ADR-001-hybrid-session-closing.md
+├── ADR-002-compensation-grading-model.md
+├── ADR-003-policy-snapshots-on-enrollment.md
+├── ADR-004-tiered-content-access.md
+├── ADR-005-notification-queue.md
+├── ADR-006-analytics-separation.md
+├── ADR-007-double-entry-foundation.md
+├── ADR-008-ai-anti-corruption.md
+├── ADR-009-timezone-utc-strategy.md
+└── ADR-010-soft-delete-cascade-rules.md
+```
+
+**Template:** Context → Decision → Alternatives Considered → Consequences → Status. ADR يتكتب **قبل** أي migration كبيرة. PR checklist يطلبه.
+
+### 14.9 Updated Layer Map (v2.2)
+
+```text
+Layer 0 — Foundation:     branches, academic_terms, branch_holidays, system_policies,
+                          accounts_chart, retention_policies, notification_templates
+Layer 1 — Identity:       profiles, user_roles, parent_student_links, audit_log, idempotency_keys
+Layer 2 — Catalog:        packages, levels, curriculum, content, package_content_permissions
+Layer 3 — Operations:     students, groups, enrollments, group_sessions, session_attendance,
+                          session_grades, compensations, substitutions, *_change_history
+Layer 4 — Finance:        payments, installments, journal_entries, ledger_entries,
+                          treasury_movements (view), refunds, student_transfers
+Layer 5 — Engagement:     homework, quizzes, final_exam_attempts, student_progression,
+                          student_blocks, admin_approval_requests
+Layer 6 — Infrastructure: notification_jobs, ai_suggestions, storage_objects_registry,
+                          analytics_events, mv_kpi_*, search indexes, cleanup_jobs
+```
+
+إجمالي ≈ **72 جدول** موزعة على 7 طبقات نظيفة.
+
+---
+
+## 15. الخلاصة النهائية (v2.2)
+
+- **72 جدول** على 7 layers — كل layer مسؤوليته محسومة.
+- **30 سيناريو** مغطى بـ flow + owner واضحين، صفر break points.
+- **Architecture Contract + Extension Rules** = صفر سباجيتي مدى الحياة.
+- **Notification Queue + Analytics separation + Search + File lifecycle + Change history + Double-entry foundation + AI ACL + ADRs** = enterprise-safe من اليوم الأول.
+- أي scale لاحقاً (10x branches، 100k students، AI features، multi-currency، multi-country) = extension مش refactor.
+
+لما توافق على v2.2 هبدأ Phase 0: DDL كامل + RLS + RPCs + triggers + cron + ADR-001 → ADR-010 + seed.
