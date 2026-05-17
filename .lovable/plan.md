@@ -894,11 +894,128 @@ ADR-017-staff-employees-unified-table.md
 
 ---
 
-## 17. الخلاصة النهائية (v2.3)
+## 17. Sales Module Hardening — Edge Cases & Flow Completeness (v2.3 audit)
 
-- **83 جدول** على 8 layers — Sales module متدمج بنفس contract.
-- **9 roles**: super_admin, branch_admin, reception, trainer, parent, student, **sales**, **moderator**، + extension point لـ team_lead.
-- **30 + 8 سيناريوهات sales** = 38 سيناريو مغطى بصفر break points.
-- **Commission engine** deterministic، DB-enforced، refund-safe، transferable-safe.
-- **Call recording** in-system، 6 شهور retention، RLS-bound، consent-gated.
-- لما توافق على v2.3 → Phase 0: DDL كامل (83 جدول) + RLS + RPCs + triggers + cron + ADR-001 → ADR-017 + seed.
+راجعت v2.3 خط بخط. النقاط دي كانت ممكن تبقى break points أو سباجيتي → كلها محسومة هنا قبل أي كود.
+
+### 17.1 Lead → Enrollment Conversion (الـ flow الناقص)
+
+`status='won'` لوحده مش enrollment. الفلو الكامل:
+
+```text
+sales: fn_transition_lead(lead, 'won')  
+  → lead.status='won', conversion_started_at=now()
+  → notification → reception(branch) "lead جاهز للتسجيل"
+  → lead يدخل reception_handoff_queue (يقفل في dashboard السيلز كـ awaiting_enrollment)
+
+reception: fn_convert_lead_to_student(lead_id, idempotency_key)
+  داخل tx:
+    1. إنشاء/ربط student (dedup على phone+full_name)
+    2. ربط parent (لو موجود) + sibling discount recalc
+    3. entry_test scheduling (لو الباقة بتطلبه)
+    4. enrollment + payment plan
+    5. INSERT commission_eligibility(lead_id, sales_id, enrollment_id, status='pending_payment')
+    6. UPDATE lead.status='converted', linked_enrollment_id, converted_at
+
+payment received → trigger → commission_eligibility.status='pending_activation'
+student activated (first session attended OR 7 days passed) → status='locked_for_payout'
+   → monthly cron يلتقطها لـ commission_ledger
+```
+
+**القاعدة الذهبية:** commission attribution = `lead.assigned_to` لحظة `status='won'`، حتى لو السيلز ده ساب الشركة بعد كده (audit-safe).
+
+### 17.2 Lead Deduplication (منع double-entry)
+
+- `leads` فيه `UNIQUE(phone_normalized) WHERE status NOT IN ('archived','lost','converted')` — partial unique index.
+- موديريتور لما يدخل lead بنفس الموبايل → السيستم يكشف ويعرضله:
+  - "موجود active مع sales X" → ممنوع duplicate.
+  - "موجود في archive منذ Y شهر" → خيار `reactivate` (يرجع لـ pool) بدل create.
+- لو الموبايل لـ student موجود → flag كـ "potential renewal/sibling lead" + ربط بـ `existing_student_id`.
+
+### 17.3 Branch Ownership of Lead
+
+- كل lead له `branch_id` إجباري (الموديريتور يحدّده وقت الإنشاء).
+- assignment، commission، KPIs، call recording RLS كلهم scoped على `lead.branch_id`.
+- لو العميل غيّر رأيه على فرع تاني بعد قابل sales → RPC `fn_transfer_lead_branch(lead_id, new_branch_id, reason)` → موافقة `branch_admin` للفرعين → commission credit يفضل للفرع الأصلي إن تم الـ won قبل التحويل.
+
+### 17.4 Sales Lifecycle Events (موظف يدخل/يخرج/ينقل)
+
+| Event | تأثير على leads | تأثير على commission |
+|---|---|---|
+| sales joins | يدخل في round-robin pool فوراً | — |
+| sales on leave (vacation flag) | leads جديدة ما بتتوزّعش عليه؛ leads مفتوحة → reception handoff queue اختياري | pending commissions تفضل |
+| sales transferred to other branch | leads مفتوحة → handoff queue للريسيبشن في الفرع القديم | commission ledger القديم يتدفع normal |
+| sales terminated | كل open leads → handoff queue تلقائي + alert | pending commissions: rule في `system_policies.sales.terminated_commission_policy` = `pay_locked_only` (default) أو `pay_all_pending` |
+
+كل ده عبر RPCs محددة، صفر manual SQL.
+
+### 17.5 Commission Edge Cases (محسومة)
+
+| Case | السلوك |
+|---|---|
+| Partial refund | clawback نسبي = `commission * (refunded / total_paid)` |
+| Package upgrade Squad→Core mid-term | commission على الـ delta فقط، attributed لنفس السيلز لو خلال 30 يوم من الـ enrollment، غير كده = renewal (zero commission افتراضي) |
+| Installments | base_amount = **first installment paid**. باقي القساط مش تكسب commission إضافية (rule موثقة في ADR-016) |
+| Multi-currency لاحقاً | commission_ledger يحفظ `currency` + `fx_rate_snapshot` |
+| Sales achieved tier 3 بس فيه refund خلّاه tier 2 | recompute في نفس الـ monthly cron قبل lock، snapshot واحد per شهر |
+| Pre-existing student renews via sales | renewal_commission flag في `commission_plans` (default false) |
+| Branch لم يحقق أقل tier بس سيلز واحد جاب 90% من الـ enrollments | صفر commission (target فرع، مش فردي) — موضح للسيلز في dashboard كـ "Branch target: 12/14" |
+
+### 17.6 Call Recording Edge Cases
+
+- **Browser crash mid-call:** MediaRecorder بيـ chunk كل 10s → الـ chunks ترفع تدريجياً عبر signed URLs. لو وقع → resume من آخر chunk عند reopen. `call_recordings.status` = `recording | uploading | complete | failed`.
+- **Two tabs مفتوحين:** `active_recording_session` lock per sales_id → ميقدرش يبدأ tow في نفس الوقت.
+- **Test/training calls:** flag `is_training=true` → مش بيدخل KPIs أو call_count.
+- **Consent withdrawn:** RPC `fn_delete_recording(id, reason)` → soft delete + audit، super_admin only.
+
+### 17.7 Round-Robin Fairness
+
+- `fn_assign_lead_auto(branch_id)` يختار السيلز بـ:
+  1. أقل `open_leads_count` (status in new/assigned/contacted/qualified/negotiation)
+  2. tiebreaker: أقدم `last_assigned_at`
+  3. skip لو `is_on_leave=true` أو `is_active=false`
+- Idempotent: نفس الـ lead لو حاول يتعيّن مرتين → no-op.
+
+### 17.8 Pre-Call Brief Versioning
+
+- موديريتور ممكن يعدّل الـ brief قبل أول call فقط.
+- بعد أول call → brief يـ freeze، أي إضافة تبقى `lead_notes` (append-only).
+- `pre_call_brief_snapshot` يتحفظ في كل `call_recording` (immutable per call).
+
+### 17.9 KPI Integrity Rules
+
+- Response time: يحسب من `assigned_at` لـ **أول outbound interaction** (call attempt أو message)، مش inbound.
+- Conversion rate: denominator = leads `assigned_at` في الفترة، numerator = `converted_at` في أي وقت لاحق (cohort analysis، مش same-period).
+- Calls/day: counts `call_recordings.duration_sec >= 15s` فقط (يستبعد misdials).
+- كل KPI له **definition doc** في `docs/kpi-definitions.md` (single source of truth).
+
+### 17.10 Permission Matrix Completeness Check
+
+كل combination (role × action × entity × ownership) ليه explicit rule في `src/lib/auth/permissions.ts` + RLS policy. أي action مش في الـ matrix = denied by default (whitelist مش blacklist). PR checklist يطلب update الـ matrix مع كل feature.
+
+### 17.11 Why No Spaghetti (الـ guarantee)
+
+| المخاطرة | الـ guard |
+|---|---|
+| Business logic يتسرّب لـ UI | كل mutation = RPC + Zod، UI tier محظور fetch مباشرة (§1.2) |
+| Module جديد يكسر القديم | Extension rules (§13): jدول جديدة، RPC جديدة، layer واضح |
+| Roles تتشابك | `staff_employees` unified + permissions whitelist + role transitions audited |
+| State machine يفلت | كل transition عبر `fn_transition_*` + `*_status_history` + DB CHECK constraints |
+| Commission calc drift | DB-enforced (SUM(debit)=SUM(credit)) + monthly snapshot immutable + recomputable من ledger |
+| Two devs يبنوا نفس الحاجة بطريقتين | Architecture Contract (§1) + PR checklist (§13.6) + ADRs (§14.8) |
+
+---
+
+## 18. الخلاصة النهائية (v2.3 — Audit-Complete)
+
+- **83 جدول** على 8 layers، **9 roles** unified تحت `staff_employees`.
+- **38 سيناريو** (30 academy + 8 sales) مغطى end-to-end بـ owner + flow + edge cases.
+- **Lead → Enrollment → Commission** flow كامل ومحسوم (مش `status='won'` نهاية القصة).
+- **Sales lifecycle** (join/leave/transfer/terminate) كلها محسومة عبر RPCs.
+- **Commission edge cases** (refund partial، upgrade، installments، multi-currency) كلها مغطاة بـ DB-enforced rules.
+- **Call recording resilience** (crash recovery، multi-tab lock، training flag) جاهزة.
+- **KPI integrity** بـ definitions موثقة + materialized views.
+- **Spaghetti prevention:** Architecture Contract + Extension Rules + Permission Whitelist + PR Checklist + ADRs.
+- أي feature جديد قدام → يدخل في الـ layer الصح، يكتب ADR، يضيف entries في الـ matrix، صفر refactor.
+
+لما توافق على v2.3 → Phase 0: DDL كامل (83 جدول) + RLS + RPCs + triggers + cron + ADR-001 → ADR-017 + seed.
