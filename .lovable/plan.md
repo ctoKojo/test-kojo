@@ -328,6 +328,212 @@ src/
 
 ---
 
-## 8. الخطوة التالية
+## 8. Architecture Contract — القواعد الإجبارية لأي Feature جديدة
 
-موافق على الـ plan v3؟ → نبدأ **Phase 0** فوراً (تفعيل Cloud + بناء Layer 0).
+دي العقد الثابت اللي **لازم** كل feature تتبعه. أي مخالفة = رفض في الـ code review. الهدف: أي مطور (أو AI) يقدر يضيف feature جديدة بدون ما يكسر اللي قبله.
+
+### 8.1 The "Feature Folder Contract"
+أي feature جديدة = folder تحت `src/features/<name>/` بالشكل ده **بالحرف**:
+
+```text
+features/<name>/
+  index.ts              ← الواجهة الوحيدة المسموح بها للـ cross-feature imports (barrel export)
+  types.ts              ← TypeScript types (مشتقة من DB types، لا تكرار)
+  schemas.ts            ← Zod schemas (للـ inputs والـ outputs)
+  queries/
+    <entity>.queries.ts ← TanStack Query hooks (useXxxQuery, useXxxMutation)
+  components/
+    <Entity>List.tsx
+    <Entity>Form.tsx
+    <Entity>Card.tsx
+  hooks/
+    use-<entity>.ts     ← UI state hooks فقط، لا business logic
+  routes/               ← (optional) لو الـ feature ليها صفحات خاصة
+```
+
+**ممنوع:**
+- `features/a/` يـ import من `features/b/components/` أو `features/b/hooks/` مباشرة
+- مسموح بس: `import { X } from "@/features/b"` (من الـ barrel)
+- `features/<x>/index.ts` يصدر بس الـ types + الـ public components + الـ public hooks (مش الـ queries أو الـ schemas الداخلية)
+
+### 8.2 The Data Flow Pattern (طبقات صارمة)
+
+```text
+┌─────────────────────────────────────────────┐
+│ UI Component                                 │  ← لا business logic، لا direct DB
+│   └─ uses TanStack Query hook                │
+└─────────────────┬───────────────────────────┘
+                  │ calls
+┌─────────────────▼───────────────────────────┐
+│ Query Hook (features/x/queries/...)          │  ← thin wrapper حول server function
+│   useXxxQuery / useXxxMutation               │
+└─────────────────┬───────────────────────────┘
+                  │ calls via useServerFn
+┌─────────────────▼───────────────────────────┐
+│ Server Function (lib/x.functions.ts)         │  ← validation + authorization + business
+│   .middleware([requireSupabaseAuth])         │
+│   .inputValidator(zod)                       │
+│   .handler(...)                              │
+└─────────────────┬───────────────────────────┘
+                  │ calls
+┌─────────────────▼───────────────────────────┐
+│ Server Helper (lib/x.server.ts) أو RPC       │  ← DB interaction، complex queries
+│   - Supabase queries                         │
+│   - rpc('fn_xxx', ...) للـ DB functions      │
+└─────────────────┬───────────────────────────┘
+                  │
+┌─────────────────▼───────────────────────────┐
+│ Postgres (Tables + Triggers + RPCs)          │  ← invariants enforced هنا (last line)
+│   - RLS policies                             │
+│   - Triggers للقواعد الـ atomic               │
+│   - SECURITY DEFINER functions               │
+└─────────────────────────────────────────────┘
+```
+
+**القاعدة:** أي طبقة تتكلم **بس** مع اللي تحتها مباشرة. لا UI يكلم Supabase. لا hook يحط business logic.
+
+### 8.3 The "Add New Feature" Checklist (7 خطوات ثابتة)
+
+أي feature جديدة تتبني بالترتيب ده **بدون تخطي**:
+
+1. **DB First:** أكتب migration → tables + constraints + RLS + triggers + RPCs (لو فيه atomic logic)
+2. **Types:** ولّد types من Supabase + ضيف الـ domain types في `features/<x>/types.ts`
+3. **Schemas:** Zod schemas في `features/<x>/schemas.ts` (input + output validation)
+4. **Server functions:** في `lib/<x>.functions.ts` مع `requireSupabaseAuth` + role check
+5. **Query hooks:** في `features/<x>/queries/` (useQuery للقراءة، useMutation للكتابة + invalidation)
+6. **Components:** في `features/<x>/components/` (max 200 سطر/component)
+7. **Route + RLS test:** أضف الـ route تحت الـ role layer الصحيح + اختبر RLS من 3 roles مختلفة
+
+### 8.4 Naming Conventions (إجبارية)
+
+| النوع | النمط | مثال |
+|---|---|---|
+| DB table | snake_case plural | `group_enrollments` |
+| DB column | snake_case | `enrolled_at` |
+| DB trigger | `trg_<verb>_<subject>` | `trg_snapshot_policies_on_enrollment` |
+| DB function (RPC) | `fn_<verb>_<subject>` | `fn_promote_student_to_next_level` |
+| pg_cron job | `cron_<purpose>` | `cron_lock_attendance` |
+| Server function | camelCase verb | `enrollStudent`, `transferStudent` |
+| Server fn file | `<domain>.functions.ts` | `enrollment.functions.ts` |
+| Query hook | `use<Entity><Action>` | `useEnrollmentsQuery` |
+| Component | PascalCase | `EnrollmentForm` |
+| Zod schema | `<entity><Action>Schema` | `enrollmentCreateSchema` |
+| Type | PascalCase | `Enrollment`, `EnrollmentInput` |
+
+### 8.5 Shared Building Blocks (مكان واحد، استخدام كل مكان)
+
+| الحاجة | المكان | الاستخدام |
+|---|---|---|
+| Money formatting | `components/shared/Money.tsx` | كل عرض لمبلغ EGP |
+| Date display (RTL/LTR) | `components/shared/DateDisplay.tsx` | كل تاريخ |
+| Status badge | `components/shared/StatusBadge.tsx` | enum statuses (active, blocked, ...) |
+| Role guard | `components/shared/RoleGate.tsx` | إخفاء UI حسب الـ role |
+| Branch selector | `components/shared/BranchSelector.tsx` | Super Admin بس |
+| Confirm dialog | `components/shared/ConfirmDialog.tsx` | كل destructive action |
+| i18n key resolver | `lib/i18n.ts` + `i18n/{ar,en}.json` | لا hardcoded strings في components |
+| Currency input | `components/shared/MoneyInput.tsx` | كل form فيه مبلغ |
+| Audit log writer | DB trigger (مش manual) | أوتوماتيك |
+
+### 8.6 Forbidden Patterns (مرفوض كلياً)
+
+- ❌ Business logic في `useEffect` (استخدم server function + mutation)
+- ❌ `localStorage` للـ business state (Supabase أو TanStack Query فقط)
+- ❌ Direct Supabase query من component (لازم تمر بـ server function)
+- ❌ Hardcoded prices/limits/policies (كلها في `system_policies` table)
+- ❌ Hardcoded strings (كلها i18n keys)
+- ❌ `any` في TypeScript (use `unknown` + zod parse)
+- ❌ Duplicate types (مشتق من Supabase generated types)
+- ❌ Cross-feature import من غير الـ barrel
+- ❌ Optimistic updates للحركات المالية
+- ❌ تعديل state بدون audit log في الجداول الحساسة
+
+### 8.7 Versioning & Migrations Discipline
+
+- كل DB change = migration جديدة (مفيش تعديل migration قديمة)
+- كل migration واضحة: `YYYYMMDDHHMMSS_<verb>_<subject>.sql`
+- Schema changes كبيرة → script للـ data backfill في نفس migration
+- إضافة عمود جديد → default value + NOT NULL في خطوتين (لو فيه data)
+
+---
+
+## 9. Edge Cases & Scenarios Coverage Audit
+
+كل سيناريو نادر اتفكر فيه وله handling واضح في الـ schema/triggers/UI:
+
+### 9.1 Student Lifecycle Edge Cases
+| سيناريو | الـ Handling |
+|---|---|
+| طالب فقد كل compensation الـ pending وعدّى limit الغيابات | `trg_full_ban_on_threshold` → fully_banned + reinstatement_fee مطلوب |
+| طالب fully_banned ودفع الـ reinstatement | status → active + الـ ban counter reset للسياسة الجديدة |
+| طالب fully_banned ورفض يدفع | يفضل في الـ status ده، الجروب يكمل بدونه، Reception يقدر يـ drop |
+| طالب حول لباقة أرخص في نص الـ level | Refund/credit للفرق، المحتوى المتاح يتعدل، الـ snapshot يفضل زي ما هو لباقي الـ level |
+| طالب حول لباقة أغلى | يدفع الفرق فوراً قبل ما يفتح المحتوى الجديد |
+| طالب نقل بين فروع وعليه قسط في الفرع القديم | `treasury_transfer` ينقل الرصيد + الـ installments المتبقية تتحول للفرع الجديد |
+| طالب فشل في Final Exam | يعيد الـ level بنفس السياسة (snapshot موجود) أو drop |
+| طالب نجح بس مفيش جروب next level متاح | `awaiting_placement` queue + notification + يقدر يستفاد من online content للـ level التالي بمجرد الـ enroll |
+| طالب عنده 2 compensations مفتوحة في نفس الوقت | كل واحدة لها deadline منفصل، يقدر يحجز الاتنين في يومين مختلفين |
+| Compensation حصلت ثم الطالب غاب عنها برضو | تتحسب absent تاني + compensation جديدة (recursion محدودة بحد الغيابات) |
+| طالب سن انتقل لـ age_group جديد | `trg_student_age_group` يحدث الـ age_group، بس enrollment الحالي يكمل (snapshot يحمي)؛ next enrollment يتم في الـ age_group الجديد |
+| Parent عنده 3 أبناء، كل واحد في فرع مختلف | parent_student_links M2M يدعم، Parent portal يعرض الـ 3 بفلاتر |
+
+### 9.2 Group & Session Edge Cases
+| سيناريو | الـ Handling |
+|---|---|
+| جروب وصل max capacity والـ Reception لسه بيحاول يسجل | `trg_validate_group_capacity` يرفض على مستوى DB (race-condition safe) |
+| المدرب غاب يوم السيشن بدون إخطار | Admin/Reception يفتح substitute flow → `fn_assign_substitute` |
+| Substitute مفيش (مفيش مدرب متاح) | السيشن تتأجل → Admin يجمد السيشن دي → كل المسجلين compensation_requests |
+| المدرب استقال في نص الـ level | كل جروباته تتجمد → `trg_cascade_group_freeze` → compensations للكل + Reception يحجز بدلاء |
+| الجروب اتجمد بالكامل | الطلاب يقدروا يـ transfer لجروبات تانية في نفس الـ level (مجاناً) |
+| السيشن online والـ link مكسور | `trg_validate_online_link` يمنع save في الأساس + Trainer يقدر يحدثه قبل السيشن |
+| Trainer سجل attendance ثم اكتشف غلط بعد قفل التعديل (30 دقيقة) | يطلب من Admin → Admin يفتح override (audit log) |
+| السيشن مرت 24 ساعة بدون close | `cron_auto_close_sessions` يقفلها + يعتبر الباقي absent |
+
+### 9.3 Financial Edge Cases
+| سيناريو | الـ Handling |
+|---|---|
+| Reception سجل دفعة بمبلغ غلط | يقدر يـ refund/adjust → entry جديد في treasury_transactions (لا حذف، لا تعديل) + audit log |
+| طالب دفع cash والـ Reception نسي يسجل | لما يسجل بعدين، يحط التاريخ الصحيح، الـ trigger يعمل compensation/commission على أساسه |
+| Sales غير في نص الشهر للطالب | `commission_assignments` بيقفل أول الشهر — العمولة بتروح للسيلز الأصلي للشهر الحالي، الجديد ياخدها من الشهر اللي بعده |
+| Sales استقال في نص الشهر | عمولاته للشهر الحالي تتحسب وتدفع له، الـ assignments تتنقل لسيلز تاني للشهر الجاي |
+| الـ commission rate اتغير في نص الشهر | الـ snapshot الشهري بيحمي — التغيير يطبق الشهر الجاي |
+| طالب دفع الـ reinstatement ثم غاب تاني فوراً | الـ counter reset، بيبدأ من الصفر بالسياسة الحالية |
+| Installment overdue ثم الطالب نقل لفرع تاني | الـ installment ينتقل، payment_blocked status ينتقل |
+| Expense ليه أكثر من category | كل expense واحد له category واحد، نقسمه لـ 2 expenses لو لازم |
+| Treasury عنده balance سالب | لا يحصل، DB CHECK constraint يمنع |
+
+### 9.4 Policy & KPI Edge Cases
+| سيناريو | الـ Handling |
+|---|---|
+| Admin غير سياسة الغيابات من 3 لـ 5 في نص العام | الطلاب القدام يفضلوا على 3 (snapshot)، الجداد ياخدوا 5 |
+| KPI weight اتغير في نص الشهر | snapshot الشهري بيحمي، يطبق الشهر الجاي |
+| Branch Admin عاوز يخالف سياسة super admin | الـ system_policies على مستوى super_admin فقط، Branch Admin يقدر يقترح بس |
+| سياسة محذوفة ولها snapshots قديمة | الـ snapshots بتفضل (FK ON DELETE RESTRICT) |
+
+### 9.5 Access & Security Edge Cases
+| سيناريو | الـ Handling |
+|---|---|
+| Reception حاول يشوف فرع تاني | RLS يرفض، UI يخفي |
+| Trainer حاول يعدل evaluation لطالب مش في جروبه | RLS يرفض |
+| Student حاول يشوف محتوى باقة أعلى | RLS يفلتر بالـ enrollment + package |
+| Parent حاول يشوف ابن مش لينك بيه | parent_student_links يفلتر |
+| User حذف الـ role بتاعه بطريق الخطأ | super admin بس يقدر يعدل user_roles، Branch Admin محدود |
+| Race condition: 2 receptions يحجزوا آخر مكان في جروب | DB-level capacity check + unique constraint يمنع |
+
+### 9.6 Data Integrity Edge Cases
+| سيناريو | الـ Handling |
+|---|---|
+| Soft-deleted student له دفعات | تفضل في treasury_transactions، historical reports تشتغل |
+| Soft-deleted package وله enrollments active | الـ enrollments تكمل عادي، مفيش enrollments جديدة |
+| Level محذوف soft وله certificates | الشهادات تفضل سارية |
+| Audit log طول جداً | partitioning شهري + retention policy (سنة كاملة minimum) |
+
+---
+
+## 10. الخطوة التالية
+
+موافق على الـ plan v3 + الـ Architecture Contract؟ نبدأ **Phase 0** فوراً:
+1. تفعيل Lovable Cloud
+2. Setup design tokens + i18n + RTL
+3. بناء Layer 0 (branches, profiles, user_roles, age_groups, system_policies, audit_logs)
+4. Login/Logout + role-based routing لكل الـ 7 roles
+
