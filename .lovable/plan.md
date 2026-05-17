@@ -231,7 +231,7 @@ features/<name>/
 ### 4.4 Frontend Auth (`lib/auth.ts`)
 - `getCurrentUser()`، `getCurrentRole()`
 - `useCurrentUser()` TanStack Query hook
-- Route guard في `_authenticated.tsx` عبر `beforeLoad`
+- Route guard عبر `<ProtectedRoute>` wrapper في React Router DOM
 
 ---
 
