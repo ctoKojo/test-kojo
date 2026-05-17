@@ -111,14 +111,30 @@ Backend (Supabase — لا server framework من جهتنا):
 
 ```text
 src/
-  routes/
-    index.tsx                ← redirect حسب الـ role
-    login.tsx
-    reset-password.tsx       ← public
-    _authenticated.tsx       ← layout + auth guard
-    _authenticated/
-      admin/ reception/ sales/ trainer/ student/ parent/
-        dashboard.tsx + sub-routes
+  main.tsx                   ← Vite entry + BrowserRouter
+  App.tsx                    ← Routes tree + Providers (QueryClient, i18n)
+  pages/                     ← React Router page components
+    LoginPage.tsx            ← public
+    ResetPasswordPage.tsx    ← public
+    IndexRedirect.tsx        ← / → redirect حسب الـ role
+    admin/                   ← protected (Super Admin + Branch Admin)
+      DashboardPage.tsx
+      students/ groups/ financial/ staff/ settings/
+    reception/
+      DashboardPage.tsx
+      students/ attendance/ compensation/ financial/
+    sales/
+      DashboardPage.tsx
+      students/ commissions/
+    trainer/
+      DashboardPage.tsx
+      sessions/ evaluations/
+    student/
+      DashboardPage.tsx
+      sessions/ assignments/ quizzes/
+    parent/
+      DashboardPage.tsx
+      children/
   features/                  ← business domains (معزولة)
     curriculum/ students/ operations/ financial/ staff/
     entry-test/ notifications/ certificates/
@@ -132,12 +148,15 @@ src/
     ui/                      ← shadcn
     shared/                  ← Money, DateDisplay, StatusBadge, RoleGate,
                                 BranchSelector, ConfirmDialog, MoneyInput,
-                                DataTable, FileUpload
+                                DataTable, FileUpload, ProtectedRoute
     layouts/                 ← AdminLayout, TrainerLayout, StudentLayout, ParentLayout
   hooks/                     ← useCurrentUser, useCurrentBranch, useRole
   i18n/                      ← ar.json, en.json, index.ts
   types/                     ← database.types.ts (generated), app.types.ts
+  router.tsx                 ← Routes tree definition
 ```
+
+**ملاحظة عن النشر:** لازم نضيف `public/_redirects` بـ `/* /index.html 200` (أو ما يعادله حسب الـ host) عشان الـ SPA يشتغل على deep links/refresh.
 
 ### 2.4 Feature Folder Contract (إجباري)
 
