@@ -197,40 +197,45 @@ src/
 
 ---
 
-## 5. مبادئ لمنع الـ Spaghetti Code
+## 4. مبادئ لمنع الـ Spaghetti Code
 
 1. **Server-first business logic:** أي قاعدة بزنس (validation, calculation, money) في `createServerFn` أو DB trigger — **مفيش** business logic في components.
 2. **Single source of truth للسياسات:** كل rule مالي/تشغيلي في `system_policies` + helper functions، مش hardcoded.
-3. **Zod everywhere:** كل input من user → zod schema. كل response من server → typed.
-4. **DB constraints قوية:** FKs, CHECK constraints, unique indexes — مش بس application-level.
-5. **Triggers للـ invariants:** أي قاعدة "لازم" تكون صحيحة دائماً → DB trigger (مش `useEffect`).
-6. **No god-components:** أقصى 200 سطر للـ component. أي حاجة أكتر تتقسم.
-7. **Feature isolation:** ممنوع `features/curriculum` يـ import من `features/financial` مباشرة. التواصل عبر server functions أو shared types.
-8. **Versioning للقرارات الحساسة:** Policies + KPI weights + Prices → كلها versioned مع `valid_from`.
+3. **Policy snapshot per cycle:** كل طالب عند بداية level بياخد snapshot من السياسات السارية. التغييرات الجديدة تطبق على enrollments جديدة فقط.
+4. **Zod everywhere:** كل input من user → zod schema. كل response من server → typed.
+5. **DB constraints قوية:** FKs, CHECK constraints, unique indexes — مش بس application-level.
+6. **Triggers للـ invariants:** أي قاعدة "لازم" تكون صحيحة دائماً (منع الطالب، عمولة، خزن) → DB trigger.
+7. **No god-components:** أقصى 200 سطر للـ component. أي حاجة أكتر تتقسم.
+8. **Feature isolation:** ممنوع `features/curriculum` يـ import من `features/financial` مباشرة. التواصل عبر server functions أو shared types.
+9. **Monthly locks:** Commission rates + KPI weights → snapshot شهري، مينفعش تتغير في نص الشهر.
 
 ---
 
-## 6. التقديرات الزمنية (تقريبية)
+## 5. التقديرات الزمنية (تقريبية)
 
-| Phase | المدة المقدّرة |
-|---|---|
-| Phase 0 | 2-3 أيام |
-| Phase 1 | 4-5 أيام |
-| Phase 2 | 7-10 أيام |
-| Phase 3 | 5-7 أيام |
-| Phase 4 | 5-7 أيام |
-| Phase 5 | 5-7 أيام |
-| Phase 6 | 3-5 أيام |
+| Phase | المحتوى | المدة |
+|---|---|---|
+| Phase 0 | Foundation (Auth, i18n, Design, جداول الأساس، RLS) | 2-3 أيام |
+| Phase 1 | Curriculum Layer (DB كامل + Admin UI) | 4-5 أيام |
+| Phase 2 | Students + Operations + Attendance + Compensation + Trainer Portal | 7-10 أيام |
+| Phase 3 | Financial Layer (Treasuries, Payments, Installments, Commissions) | 5-7 أيام |
+| Phase 4 | Evaluation + Online Content + Student/Parent Portals + Certificates | 5-7 أيام |
+| Phase 5 | Staff + KPIs + Notifications + pg_cron Jobs | 5-7 أيام |
+| Phase 6 | Dashboards + Reports + Polish | 3-5 أيام |
 
-**الإجمالي:** ~5-7 أسابيع لو شغل مستمر بدون توقف.
+**الإجمالي:** ~5-7 أسابيع لو شغل مستمر.
 
 ---
 
-## 7. الخطوة التالية
+## 6. الخطوة التالية
 
-لو موافق على الـ plan ده، نبدأ بـ **Phase 0** فوراً:
-1. تفعيل Lovable Cloud
-2. Setup الـ Auth + i18n + Design system
-3. إنشاء جداول الأساس (branches, profiles, user_roles, system_policies) مع RLS
+**Phase 0 — Foundation:**
+1. تفعيل Lovable Cloud (Supabase + Auth + Storage)
+2. Setup i18n (ar/en) + RTL/LTR auto-switch + Design tokens بطابع Kojo
+3. Folder structure + Routing skeleton لكل الـ roles
+4. إنشاء جداول الأساس: `branches`, `profiles`, `user_roles`, `age_groups`, `system_policies`, `policy_snapshots`, `audit_logs`
+5. RLS + `has_role()` security definer function
+6. صفحات Login/Logout + role-based redirect لكل dashboard
 
-لكن **قبل ما نبدأ**، محتاج إجاباتك على الـ 12 نقطة في القسم 2 (أو موافقة على اقتراحاتي فيها) عشان الـ schema يطلع صح من المرة الأولى.
+بعد ما تعتمد الـ plan، نبدأ Phase 0 على طول.
+
