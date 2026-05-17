@@ -1,10 +1,10 @@
 # Kojo Academy — خطة البناء الشاملة (v4)
 
 أكاديمية تعليمية متعددة الفروع، نظام هجين (أونلاين + أوفلاين).
-**Stack:** Lovable (TanStack Start = Vite + React 18 + TypeScript) + Supabase (Postgres + Auth + Storage + Edge Functions + pg_cron).
+**Stack:** Vite + React 18 + TypeScript (SPA خالص — client-side فقط، لا SSR) + Supabase (Postgres + Auth + Storage + Edge Functions + pg_cron).
 الـ Business Logic كله في Supabase (Triggers + RPCs + Edge Functions) — الـ Frontend نظيف بدون أي business logic.
 
-> ملاحظة عن الـ Stack: المشروع متبني على TanStack Start (اللي بيشغّل Vite + React + TanStack Router). نقدر نستخدمه كـ SPA بحت لو حبينا، أو نستفيد من الـ SSR للصفحات العامة (Login، Landing). الـ routes اللي تحت `_authenticated/` هتشتغل client-side بالكامل.
+> **ملاحظة مهمة عن الـ Stack:** المشروع الحالي متبني على TanStack Start (SSR). هنحوّله لـ **Vite SPA خالص** (نشيل TanStack Start ونستخدم Vite + React Router DOM v6). ده يبسّط كل حاجة: لا createServerFn، لا server entry، لا concerns عن client/server boundary. الـ Auth والـ Data كلها مباشرة من المتصفح للـ Supabase.
 
 ---
 
