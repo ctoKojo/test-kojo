@@ -408,7 +408,130 @@ CREATE TABLE package_content_permissions (
 
 ---
 
-## 12. مفتوح للنقاش
-لو في scenarios إضافية (scholarships, multi-currency, corporate accounts) قولها دلوقتي عشان تتدمج في Phase 0.
+## 12. Final Stress-Test على v2.1 (كل السيناريوهات)
 
-لما توافق على v2.1 هبدأ Phase 0 فوراً بالـ DDL الكامل + RLS + RPCs + triggers + cron.
+| # | السيناريو | الـ Owner | الـ Flow | الـ Guard | النتيجة |
+|---|---|---|---|---|---|
+| S1 | تسجيل طالب جديد + ولي أمر | Reception | `rpc_register_student_with_parent` → magic link → snapshot policies في نفس tx | RoleGuard reception + idempotency | ✅ |
+| S2 | Entry test → placement | Reception | `rpc_evaluate_entry_test` → recommended_level → enroll | trainer-only grading | ✅ |
+| S3 | جروب جديد ببداية مؤجلة (waiting) | Branch admin | enrollments = `active_waiting` → `fn_start_group` → trigger يفعّلهم | لا compensation قبل start_date | ✅ |
+| S4 | 3 إخوة في 3 جروبات | Reception | INSERT links → `trg_recalculate_sibling_discounts` (INS/UPD/DEL) | discount دقيق | ✅ |
+| S5 | غياب طالب + تعويض | Trainer → Admin | absent → compensation pending → admin schedules makeup → trainer grades makeup → attendance على الأصلية + grade على makeup | session_grades مرتبط بـ makeup_session_id | ✅ |
+| S6 | غياب بعذر | Parent → Admin | `fn_submit_absence_excuse` → approval → `status='excused'` + recalc counter | expires 72h | ✅ |
+| S7 | حرمان (absence/hw) → فك | System → Admin | trigger يحط block → `fn_request_reinstatement` → admin approve → fee + unblock | ممنوع UPDATE مباشر على blocks | ✅ |
+| S8 | Cron يقفل سيشن بدون attendance | System → Admin | status = `needs_admin_review` → notification → admin يقرر | لا compensation ولا KPI تلقائي | ✅ |
+| S9 | Race: trainer + cron يقفلوا نفس السيشن | DB | `SELECT FOR UPDATE WHERE status='open'` + version | الثاني يفشل بـ stale_version | ✅ |
+| S10 | Trainer leave مفاجئ | Trainer → Admin | `fn_request_trainer_leave` → sessions → `pending_reassignment_queue` → admin reassign | GIST يمنع overlap | ✅ |
+| S11 | تغيير trainer لسيشن واحدة | Admin | `fn_reassign_session` → GIST check → substitutions + notify | conflict dialog | ✅ |
+| S12 | تأجيل سيشن (reschedule) | Admin | `fn_reschedule_session` → UTC recalc → GIST recheck | holidays awareness | ✅ |
+| S13 | Holiday في نص الجروب | System | generation/reschedule يتخطى `branch_holidays` ويمد آخر سيشن | term boundary aware | ✅ |
+| S14 | Payment + installments + late fee | Reception | `fn_create_payment` idempotent → installments → cron flag overdue → block | snapshot للـ policy وقت الدفع | ✅ |
+| S15 | Refund pro-rated | Admin | `fn_apply_refund` يقرأ snapshot policy + remaining_sessions → treasury movement | idempotency_key مطلوب | ✅ |
+| S16 | نقل داخل الفرع | Reception | `fn_transfer_student type=intra_branch` → free + carry sessions | بدون treasury movement | ✅ |
+| S17 | نقل بين فروع | Admin | `type=inter_branch` → seat check → treasury transfer بين accounts | atomic transaction | ✅ |
+| S18 | امتحان نهائي + رسوب + إعادة | Trainer → Admin → Student | attempt 1 fail → `fn_request_final_retake` → approve → attempt 2 → max → `repeat_level` | max_attempts من policy | ✅ |
+| S19 | Level pass → advance | System | `fn_calculate_level_result` → pass → `fn_advance_to_next_level` + new enrollment | prerequisites check | ✅ |
+| S20 | Squad student يحاول يفتح full video | Student | RLS يرفض via `v_student_accessible_content` | 0 leak | ✅ |
+| S21 | Parent يشوف أولاده فقط | Parent | RLS عبر `parent_student_links` | branch isolation | ✅ |
+| S22 | Super_admin يبدّل فرع | Super admin | `useAuth.switchBranch()` → `activeBranchId` يتحدث → كل queries scoped | RLS بـ `current_user_branch_ids()` | ✅ |
+| S23 | Trainer يحاول grade سيشن مش بتاعته | Trainer | RLS على `session_grades` بـ trainer_id | denied | ✅ |
+| S24 | Reception يحاول يحذف payment | Reception | RoleGuard + RLS deny | audit log | ✅ |
+| S25 | KPIs per term | System | cron يحسب بـ `term_id` → historical مقارنة دقيقة | لا drift بين الترمات | ✅ |
+| S26 | Notifications تتراكم > 90 يوم | System | weekly cron → `notifications_archive` | feed سريع | ✅ |
+| S27 | Soft-delete branch فيه نشاط | Super admin | `fn_archive_branch` يفحص dependencies → reject أو archive | لا cascade hard | ✅ |
+| S28 | Idempotent retry للـ payment | Client | نفس `idempotency_key` → same response, no double-charge | 30-day TTL | ✅ |
+| S29 | DST switch في مصر | System | UTC columns ثابتة → GIST يشتغل بدون false overlap | local UI يعرض صح | ✅ |
+| S30 | Bootcamp intensive (5 أيام/أسبوع) | Admin | `schedule_meta.sessions_per_week=5` → engine يولّد بـ round-robin | بدون أي تغيير في الكود | ✅ |
+
+**النتيجة:** كل الـ 30 سيناريو مغطى. مفيش break point، مفيش owner غامض، مفيش flow ناقص.
+
+---
+
+## 13. Architecture Contract — ثابت طول عمر المشروع
+
+ده الـ Contract اللي أي feature جديدة هتنضاف لازم تتبعه — يمنع السباجيتي تماماً:
+
+### 13.1 الـ 6 طبقات الثابتة (لكل feature)
+
+```text
+1. DB Layer        → migration: tables + RLS + indexes + constraints
+2. Logic Layer     → RPC SECURITY DEFINER + triggers + audit + idempotency
+3. Validation      → Zod schema في src/lib/validators/<domain>.ts
+4. API Layer       → src/lib/api/<domain>.ts (الوحيد اللي يستدعي supabase)
+5. Hooks Layer     → src/hooks/queries/use<Domain>.ts + mutations/use<Action>.ts
+6. UI Layer        → src/components/features/<domain>/ + route file
+```
+
+### 13.2 قواعد التوسع (Extension Rules)
+
+| لو عايز تضيف... | المسار الثابت |
+|---|---|
+| Field جديد لجدول | migration → regen types → update Zod → update API → hook auto-typed |
+| Action جديد (RPC) | migration RPC → Zod schema → API wrapper → mutation hook → UI button مع RoleGuard |
+| Role جديد | enum migration → seed permissions → update `permissions.ts` matrix → خلاص |
+| Domain جديد بالكامل | folder في api/ + validators/ + features/ + routes/ — صفر تأثير على الباقي |
+| Cron جديد | function + entry في `cron.config` + توثيق في `docs/db-events.md` |
+| Notification type جديد | enum value + template في `email-templates/` + entry في `notification-types.ts` |
+
+### 13.3 الـ Boundaries المقدسة (Forbidden Imports)
+
+```text
+components/features/<A>   ✗ ←→ ✗   components/features/<B>     (cross-feature direct import)
+components/                ✗ ──→ ✗   integrations/supabase       (لازم يعدّي على api/)
+hooks/                     ✗ ──→ ✗   integrations/supabase       (لازم يعدّي على api/)
+stores/                    ✗ ──→ ✗   api/                        (Zustand للـ UI state فقط)
+lib/api/                   ✗ ──→ ✗   components/                 (one-way only)
+```
+
+- ESLint rule `no-restricted-imports` يطبّق الـ boundaries دي تلقائياً.
+
+### 13.4 الـ Naming Convention الثابت
+
+```text
+DB:       snake_case          (table_name, column_name, fn_action_name)
+RPC:      fn_<verb>_<noun>    (fn_close_session, fn_create_payment)
+Trigger:  trg_<event>_<noun>  (trg_recalculate_siblings)
+Cron:     cron_<verb>_<noun>  (cron_auto_close_sessions)
+View:     v_<descriptive>     (v_student_session_history)
+TS API:   camelCase           (closeSession, createPayment)
+Hook:     use<Verb><Noun>     (useCloseSession, usePaymentsQuery)
+Component:PascalCase          (SessionCloseDialog)
+Route:    kebab-case          (group-sessions.tsx)
+```
+
+### 13.5 Single Source of Truth Map
+
+| المعلومة | مكانها الوحيد |
+|---|---|
+| Permissions | `src/lib/auth/permissions.ts` |
+| Policies | `system_policies` table (per branch JSONB) |
+| Subscription end | derived من `remaining_sessions` + recalc cron |
+| Attendance count | `session_attendance` (لا cache) |
+| Sibling discount | `fn_recalculate_sibling_discounts` |
+| Session status | `group_sessions.status` + `version` |
+| User role | `user_roles` table (مش في profile) |
+| Time | UTC في DB، local في UI عبر `branches.timezone` |
+
+### 13.6 Quality Gates (PR Checklist إجباري)
+
+- [ ] Migration + RLS + indexes
+- [ ] RPC = SECURITY DEFINER + audit_log + idempotency (لو money/session)
+- [ ] Zod validator
+- [ ] API wrapper في الـ domain الصح
+- [ ] Hook (query أو mutation)
+- [ ] RoleGuard على الـ UI action
+- [ ] Empty/Loading/Error states
+- [ ] Types regenerated
+- [ ] Cron/trigger موثّق في `docs/db-events.md`
+
+---
+
+## 14. الخلاصة
+
+- **57 جدول** موزعين على 5 طبقات واضحة.
+- **كل scenario** من 30 سيناريو مغطى بـ owner واضح وflow كامل.
+- **Architecture Contract** يمنع السباجيتي مهما كبر المشروع.
+- **Single source of truth** لكل معلومة → صفر drift.
+- **Extension rules** تخلي إضافة أي feature تتم في مسار ثابت معروف.
+
+لما توافق على v2.1 هبدأ Phase 0 فوراً.
