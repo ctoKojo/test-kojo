@@ -1,10 +1,10 @@
 # Kojo Academy — خطة البناء الشاملة (v4)
 
 أكاديمية تعليمية متعددة الفروع، نظام هجين (أونلاين + أوفلاين).
-**Stack:** Lovable (TanStack Start = Vite + React 18 + TypeScript) + Supabase (Postgres + Auth + Storage + Edge Functions + pg_cron).
+**Stack:** Vite + React 18 + TypeScript (SPA خالص — client-side فقط، لا SSR) + Supabase (Postgres + Auth + Storage + Edge Functions + pg_cron).
 الـ Business Logic كله في Supabase (Triggers + RPCs + Edge Functions) — الـ Frontend نظيف بدون أي business logic.
 
-> ملاحظة عن الـ Stack: المشروع متبني على TanStack Start (اللي بيشغّل Vite + React + TanStack Router). نقدر نستخدمه كـ SPA بحت لو حبينا، أو نستفيد من الـ SSR للصفحات العامة (Login، Landing). الـ routes اللي تحت `_authenticated/` هتشتغل client-side بالكامل.
+> **ملاحظة مهمة عن الـ Stack:** المشروع الحالي متبني على TanStack Start (SSR). هنحوّله لـ **Vite SPA خالص** (نشيل TanStack Start ونستخدم Vite + React Router DOM v6). ده يبسّط كل حاجة: لا createServerFn، لا server entry، لا concerns عن client/server boundary. الـ Auth والـ Data كلها مباشرة من المتصفح للـ Supabase.
 
 ---
 
@@ -12,11 +12,12 @@
 
 | البند | القرار |
 |---|---|
-| **Frontend** | TanStack Start (Vite + React 18 + TS) — routes تحت `_authenticated/` تعمل client-side |
+| **Frontend** | Vite + React 18 + TypeScript (SPA خالص) |
+| **Routing** | React Router DOM v6 (BrowserRouter + nested routes + loaders) |
 | **Backend** | Supabase (Postgres + Auth + Storage + pg_cron) |
-| **Server Logic المعقد** | Supabase Edge Functions (Email، PDF، orchestration) |
-| **Server Logic البسيط** | `createServerFn` (TanStack) أو مباشرة `supabase.from/rpc` من client |
-| **Auth Guard** | Supabase `auth.uid()` في RLS + `beforeLoad` في الـ routes |
+| **Server Logic المعقد** | Supabase Edge Functions (Email، PDF، orchestration، secrets) |
+| **Server Logic البسيط** | مباشرة `supabase.from/rpc` من الـ client (RLS بتحمي) |
+| **Auth Guard** | Supabase `auth.uid()` في RLS + `<ProtectedRoute>` في React Router |
 | **DB Logic** | Triggers + RPC functions للـ atomic invariants |
 | **State** | TanStack Query v5 (server state) + Zustand (UI state فقط) |
 | **Forms** | react-hook-form + zod |
@@ -43,24 +44,30 @@
 ### 2.1 Stack الكامل
 
 ```text
-Frontend (TanStack Start):
+Frontend (Vite SPA):
   Vite + React 18 + TypeScript
-  TanStack Router        ← file-based routing + guards
-  TanStack Query v5      ← server state + caching
-  Zustand                ← UI state فقط (modals, sidebar)
-  react-hook-form + zod  ← forms + validation
-  react-i18next          ← i18n + RTL/LTR
-  shadcn/ui + Tailwind   ← components + styling
-  @react-pdf/renderer    ← certificate preview (client)
+  React Router DOM v6     ← routing (BrowserRouter + nested + loaders)
+  TanStack Query v5       ← server state + caching
+  Zustand                 ← UI state فقط (modals, sidebar)
+  react-hook-form + zod   ← forms + validation
+  react-i18next           ← i18n + RTL/LTR
+  shadcn/ui + Tailwind    ← components + styling
+  @react-pdf/renderer     ← certificate preview (client)
 
-Backend (Supabase):
-  PostgreSQL             ← database
-  Supabase Auth          ← authentication + JWT
-  Supabase Storage       ← PDFs, slides
-  Supabase Edge Functions ← business logic معقد، email، PDF
-  pg_cron                ← scheduled jobs
-  Row Level Security     ← authorization layer
+Backend (Supabase — لا server framework من جهتنا):
+  PostgreSQL              ← database
+  Supabase Auth           ← authentication + JWT (في المتصفح مباشرة)
+  Supabase Storage        ← PDFs, slides
+  Supabase Edge Functions ← business logic معقد، email، PDF، secrets
+  pg_cron                 ← scheduled jobs
+  Row Level Security      ← authorization layer (الحماية الأساسية)
 ```
+
+**ليه SPA خالص؟**
+- مفيش server من جهتنا = مفيش client/server boundary = مفيش `process.env` confusion
+- كل secrets في Supabase Edge Functions فقط
+- الـ RLS هي خط الدفاع الأول والأخير
+- نشر أسهل (static hosting) + أرخص
 
 ### 2.2 Data Flow (طبقات صارمة)
 
@@ -104,14 +111,30 @@ Backend (Supabase):
 
 ```text
 src/
-  routes/
-    index.tsx                ← redirect حسب الـ role
-    login.tsx
-    reset-password.tsx       ← public
-    _authenticated.tsx       ← layout + auth guard
-    _authenticated/
-      admin/ reception/ sales/ trainer/ student/ parent/
-        dashboard.tsx + sub-routes
+  main.tsx                   ← Vite entry + BrowserRouter
+  App.tsx                    ← Routes tree + Providers (QueryClient, i18n)
+  pages/                     ← React Router page components
+    LoginPage.tsx            ← public
+    ResetPasswordPage.tsx    ← public
+    IndexRedirect.tsx        ← / → redirect حسب الـ role
+    admin/                   ← protected (Super Admin + Branch Admin)
+      DashboardPage.tsx
+      students/ groups/ financial/ staff/ settings/
+    reception/
+      DashboardPage.tsx
+      students/ attendance/ compensation/ financial/
+    sales/
+      DashboardPage.tsx
+      students/ commissions/
+    trainer/
+      DashboardPage.tsx
+      sessions/ evaluations/
+    student/
+      DashboardPage.tsx
+      sessions/ assignments/ quizzes/
+    parent/
+      DashboardPage.tsx
+      children/
   features/                  ← business domains (معزولة)
     curriculum/ students/ operations/ financial/ staff/
     entry-test/ notifications/ certificates/
@@ -125,12 +148,15 @@ src/
     ui/                      ← shadcn
     shared/                  ← Money, DateDisplay, StatusBadge, RoleGate,
                                 BranchSelector, ConfirmDialog, MoneyInput,
-                                DataTable, FileUpload
+                                DataTable, FileUpload, ProtectedRoute
     layouts/                 ← AdminLayout, TrainerLayout, StudentLayout, ParentLayout
   hooks/                     ← useCurrentUser, useCurrentBranch, useRole
   i18n/                      ← ar.json, en.json, index.ts
   types/                     ← database.types.ts (generated), app.types.ts
+  router.tsx                 ← Routes tree definition
 ```
+
+**ملاحظة عن النشر:** لازم نضيف `public/_redirects` بـ `/* /index.html 200` (أو ما يعادله حسب الـ host) عشان الـ SPA يشتغل على deep links/refresh.
 
 ### 2.4 Feature Folder Contract (إجباري)
 
@@ -205,7 +231,7 @@ features/<name>/
 ### 4.4 Frontend Auth (`lib/auth.ts`)
 - `getCurrentUser()`، `getCurrentRole()`
 - `useCurrentUser()` TanStack Query hook
-- Route guard في `_authenticated.tsx` عبر `beforeLoad`
+- Route guard عبر `<ProtectedRoute>` wrapper في React Router DOM
 
 ---
 
@@ -260,7 +286,8 @@ features/<name>/
 
 ## 7. Frontend Patterns (نماذج جاهزة)
 
-- **Route Guard:** `_authenticated.tsx` يستخدم `beforeLoad` لقراءة الـ role والـ branch
+- **Route Guard:** `<ProtectedRoute roles={['admin']}>` wrapper يستخدم `useCurrentUser()` + `useRole()` ويعمل `<Navigate to="/login" />` لو مش مصرح
+- **Routes Tree:** `createBrowserRouter` في `router.tsx` مع nested routes per role layout
 - **Query Pattern:** factory للـ keys + `useQuery` + `useMutation` + `invalidateQueries`
 - **API Layer:** كل domain له `*.api.ts` يجمع supabase calls + rpc
 - **Edge Function Call:** `supabase.functions.invoke(name, { body })`
@@ -282,7 +309,7 @@ features/<name>/
 | Mutation | `use<Action><Entity>Mutation` | `useEnrollStudentMutation` |
 | Component | PascalCase | `StudentEnrollmentForm` |
 | Schema | `<entity><Action>Schema` | `enrollmentCreateSchema` |
-| Route | kebab-case | `student-profile.tsx` |
+| Page component | PascalCase + `Page` suffix | `StudentProfilePage.tsx` |
 | Query key factory | `<entity>Keys` | `studentKeys` |
 
 ---
