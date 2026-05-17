@@ -693,3 +693,212 @@ Layer 6 — Infrastructure: notification_jobs, ai_suggestions, storage_objects_r
 - أي scale لاحقاً (10x branches، 100k students، AI features، multi-currency، multi-country) = extension مش refactor.
 
 لما توافق على v2.2 هبدأ Phase 0: DDL كامل + RLS + RPCs + triggers + cron + ADR-001 → ADR-010 + seed.
+
+---
+
+## 16. Sales & Moderator Module (v2.3)
+
+موديول مبيعات كامل متدمج في نفس الـ Architecture Contract. صفر سباجيتي. Roles جديدة: `sales`, `moderator`. كلهم موظفين في `staff_employees` زي أي رول تاني.
+
+### 16.1 Roles & Responsibilities
+
+| Role | بيعمل | ممنوع |
+|---|---|---|
+| **moderator** | يضيف Lead + يختار `lead_source` من قائمة ثابتة + يكتب `pre_call_brief` (ملاحظات للسيلز يقرأها قبل المكالمة) | يتواصل مع leads، يعدّل بعد التسليم، يشوف commissions |
+| **sales** | يسحب lead من pool/auto-assigned، يكلّم، يسجّل مكالمة داخل السيستم، يحدّث status، يحوّل lead لـ enrollment | يضيف lead جديد، يغيّر source، يشوف leads مش متعيّنة ليه، يحوّل لـ sales تاني (يحوّل للريسيبشن فقط) |
+| **branch_admin** | يسمع تسجيلات فرعه، يشوف KPIs، يعدّل targets per branch | يغيّر commission tiers (super_admin only) |
+| **super_admin** | يحدّد `lead_sources` list، `commission_tiers` per package، يسمع كل التسجيلات، archive policy | — |
+
+**ملاحظة حاسمة:** الموديريتور هو **المصدر الوحيد** لإدخال leads. مفيش webhook، مفيش website form direct، مفيش manual entry من sales. لو جه lead من أي قناة خارجية → الموديريتور يدخّله يدوياً مع تحديد الـ source.
+
+### 16.2 Lead Lifecycle (State Machine)
+
+```text
+new → assigned → contacted → qualified → negotiation → won
+                          ↘ unreachable (attempt 1,2,3)
+                          ↘ lost (with reason)
+
+unreachable (after 3 attempts) ────────► archived
+lost / rejected ────────────────────────► archived
+archived (after N months) ──reactivate──► new (موديريتور فقط)
+```
+
+- كل transition عبر RPC `fn_transition_lead(lead_id, to_status, reason, idempotency_key)`.
+- `lead_status_history` table — كل تغيير + timestamp + actor.
+- `archive_after_attempts = 3` (configurable في `system_policies`).
+- `reactivation_cooldown_months = 6` (configurable).
+
+### 16.3 Assignment Strategy (Hybrid)
+
+```text
+Lead created
+  → IF active_sales_count = 1 → assign directly
+  → ELSE IF auto_assign_enabled (per branch) → round-robin بناءً على open_leads_count
+  → ELSE → pool (sales يسحب من pool)
+
+Sales pulls from pool: fn_claim_lead(lead_id) — SELECT FOR UPDATE SKIP LOCKED
+   → assigned_to = me, assigned_at = now()
+   → max 1 pull/click، مفيش race condition
+```
+
+`system_policies.sales.assignment_mode` = `auto_round_robin` | `pool` | `hybrid`. الافتراضي **hybrid**.
+
+### 16.4 Call Recording (In-System)
+
+**Flow:** السيلز يضغط **Start Recording** في الواجهة → المتصفح يفتح MediaRecorder API على الـ mic → السيلز بيكلّم من موبايله على speakerphone → الـ mic يلتقط الصوت → عند End يرفع على Storage.
+
+**Privacy & consent:**
+- قبل أول مكالمة في اليوم: confirmation modal "تأكد إن العميل عارف إن المكالمة بتتسجل لأغراض جودة الخدمة" — إجباري tick.
+- `consent_acknowledged_at` يتسجّل في `call_recordings`.
+
+**Storage:**
+- bucket `call-recordings` (private، RLS strict).
+- retention **6 شهور** عبر `retention_policies` (§14.4) → بعدها auto-delete.
+- format: `webm/opus` (small + browser-native).
+
+**جداول:**
+```text
+call_recordings(id, lead_id, sales_id, started_at, ended_at, duration_sec,
+                storage_path, consent_acknowledged_at, pre_call_brief_snapshot,
+                call_outcome, notes, deleted_at)
+```
+
+**Access control (RLS):**
+- `sales` → يسمع تسجيلاته فقط.
+- `branch_admin` → يسمع تسجيلات sales في فرعه.
+- `super_admin` → كل التسجيلات.
+- `moderator` → ممنوع نهائياً.
+
+**Pre-call brief:** قبل أي مكالمة → الواجهة تعرض `lead.pre_call_brief` (اللي كتبه الموديريتور) + آخر 3 interactions. السيلز ميقدرش يبدأ recording قبل ما يأكد قراءة الـ brief.
+
+### 16.5 Commission Engine (Tiered, Per-Package, Per-Branch)
+
+**القواعد المحسومة:**
+1. التارجت **per branch** مش per sales (الفرع كله يحقق → الكل ياخد).
+2. التارجت **per package tier** منفصل (Squad targets ≠ Core ≠ X).
+3. **Highest tier achieved** wins (لو حقق tier 3 → كل الطلاب بنسبة tier 3، مش mix).
+4. لو محققش أقل tier → **صفر commission**.
+5. الكوميشن **على أول enrollment فقط** للطالب (مفيش renewal commission).
+6. **Timing:** يُحسب بعد دفع الطالب + activation الفعلية في السيستم.
+7. **Refund clawback:** لو ريفند قبل 30 يوم من الدفع → commission يتشطب (lock تلقائي قبل payout). لو بعد 30 يوم → يفضل.
+8. **Payout monthly:** نهاية كل شهر → snapshot → payable.
+9. **Student transfer بين فروع:** commission يفضل للفرع الأصلي اللي عمل الـ enrollment.
+
+**جداول:**
+```text
+commission_plans(id, name, effective_from, effective_to, status, created_by)
+
+commission_tiers(id, plan_id, package_tier[squad|core|x], branch_id,
+                 min_enrollments int, percentage numeric(5,2))
+   -- مثال: plan=2026Q1, package=squad, branch=Maadi
+   --   tier1: min=14 → 5%
+   --   tier2: min=30 → 8%
+   --   tier3: min=50 → 12%
+
+commission_ledger(id, sales_id, enrollment_id, payment_id, branch_id,
+                  package_tier, base_amount numeric(12,2),
+                  applied_percentage numeric(5,2), commission_amount numeric(12,2),
+                  status[pending|locked|paid|clawed_back], 
+                  computed_at, locked_at, paid_at, clawback_reason)
+
+commission_payouts(id, sales_id, period_month date, total numeric(12,2),
+                   payout_date, journal_entry_id)
+```
+
+**Engine flow:**
+```text
+Monthly cron (1st of month, 02:00):
+  FOR each branch, FOR each package_tier:
+    count = enrollments(prev_month, branch, tier, status='active', not_refunded_within_30d)
+    achieved_tier = highest tier where count >= min_enrollments (per branch policy)
+    IF achieved_tier IS NULL → skip (zero commission)
+    ELSE FOR each enrollment in that bucket:
+      base = first_payment_amount
+      commission = base * achieved_tier.percentage
+      INSERT commission_ledger(status='locked', applied_percentage, commission_amount)
+    
+    Aggregate per sales_id → commission_payouts(status='pending_payout')
+    fn_post_journal_entry → debit Expense:SalesCommission, credit Liability:CommissionPayable
+```
+
+**Refund clawback trigger:** عند `fn_refund(payment_id)` → IF days_since_payment < 30 AND commission_ledger.status='locked' → UPDATE status='clawed_back' + reverse journal entry.
+
+### 16.6 Lead Reassignment & Receptionist Handoff
+
+- Sales **ميقدرش** يحوّل lead لـ sales تاني.
+- لو الـ lead احتاج handoff (مثلاً sales في إجازة) → يحوّل **للريسيبشن** اللي تقسّمه على الفريق المتاح.
+- RPC `fn_handoff_lead_to_reception(lead_id, reason)` → status='reassigned_pending' → reception dashboard يشوفه → reception RPC `fn_reassign_lead(lead_id, new_sales_id)`.
+
+### 16.7 KPIs (Priority Order)
+
+الـ Sales Dashboard يعرض بالترتيب ده (مش كلهم نفس الوزن):
+
+| # | KPI | تعريف | Source |
+|---|---|---|---|
+| 1 | **Revenue per Sales** | sum(payments.amount) من enrollments اللي السيلز كسبها، الشهر الحالي | mv_sales_revenue_monthly |
+| 2 | **Conversion Rate** | won / (won + lost + archived) للـ leads المتعيّنة في الفترة | mv_sales_conversion |
+| 3 | **Response Time (avg)** | avg(first_interaction_at - assigned_at) | mv_sales_response_time |
+| 4 | **Source ROI** | revenue per lead_source / cost (لو متسجّل) | mv_lead_source_roi |
+| 5 | **Lead Aging** | distribution of leads by days_since_assigned (buckets: 0-2, 3-7, 8-14, 15+) | mv_lead_aging |
+| 6 | **Loss Reasons** | breakdown of lost leads by reason | mv_loss_reasons |
+| 7 | **Calls per Day** | count(call_recordings) per day per sales | mv_calls_per_day |
+
+كلها materialized views تحت §14.2 (refreshed hourly). الـ adapter `src/lib/api/analytics.ts` يعرضها بنفس الباترن.
+
+### 16.8 Tables Summary (v2.3 additions = 11 tables)
+
+```text
+Layer 1 (Identity):       staff_employees (موحّد لكل الموظفين: sales, moderator, trainer, reception, branch_admin)
+                          staff_salaries (monthly base salary per employee)
+Layer 4 (Finance):        commission_plans, commission_tiers, commission_ledger, commission_payouts
+Layer 7 (Sales — NEW):    lead_sources (catalog, super_admin managed)
+                          leads (core entity)
+                          lead_status_history
+                          lead_interactions (calls, notes, meetings)
+                          call_recordings
+                          lead_archive (auto-archived leads + reactivation log)
+```
+
+**إجمالي جديد: 72 + 11 = 83 جدول على 8 layers.**
+
+### 16.9 RLS Matrix (Sales Module)
+
+| Table | sales | moderator | branch_admin | super_admin | reception |
+|---|---|---|---|---|---|
+| leads (insert) | ✗ | ✓ (own branch) | ✓ | ✓ | ✗ |
+| leads (select own assigned) | ✓ | own-created only | branch | all | branch (handoff queue only) |
+| leads (update status) | ✓ (own + state machine) | ✗ | ✓ | ✓ | reassign only |
+| call_recordings (listen) | own only | ✗ | branch | all | ✗ |
+| commission_ledger (read) | own only | ✗ | branch summary | all | ✗ |
+| commission_tiers (write) | ✗ | ✗ | ✗ | ✓ | ✗ |
+| lead_sources (write) | ✗ | ✗ | ✗ | ✓ | ✗ |
+
+### 16.10 ADRs Added (v2.3)
+
+```text
+ADR-011-moderator-as-sole-lead-entry.md
+ADR-012-hybrid-lead-assignment.md
+ADR-013-browser-mediarecorder-vs-twilio.md
+ADR-014-per-branch-tiered-commission.md
+ADR-015-30day-refund-clawback-window.md
+ADR-016-first-enrollment-only-commission.md
+ADR-017-staff-employees-unified-table.md
+```
+
+### 16.11 Future Extensions (نتركها كـ extension points، مش implementation الآن)
+
+- `team_lead` role (hierarchy جاهز في `staff_employees.manager_id` من اليوم الأول).
+- Twilio integration كـ alternative recording channel (المكان واحد: `call_recordings.source='twilio'|'browser'`).
+- Lead scoring (AI suggestion عبر §14.7 ACL).
+- Renewal commission (toggle في `commission_plans.applies_to_renewals=false` الافتراضي).
+
+---
+
+## 17. الخلاصة النهائية (v2.3)
+
+- **83 جدول** على 8 layers — Sales module متدمج بنفس contract.
+- **9 roles**: super_admin, branch_admin, reception, trainer, parent, student, **sales**, **moderator**، + extension point لـ team_lead.
+- **30 + 8 سيناريوهات sales** = 38 سيناريو مغطى بصفر break points.
+- **Commission engine** deterministic، DB-enforced، refund-safe، transferable-safe.
+- **Call recording** in-system، 6 شهور retention، RLS-bound، consent-gated.
+- لما توافق على v2.3 → Phase 0: DDL كامل (83 جدول) + RLS + RPCs + triggers + cron + ADR-001 → ADR-017 + seed.
