@@ -301,7 +301,114 @@ mutation.mutate({ ...payload, idempotency_key: crypto.randomUUID() });
 
 ---
 
-## 10. مفتوح للنقاش
+## 10. v2.1 — Fixes للـ 6 مشاكل اللي ظهرت من مراجعة الـ DDL
+
+### 10.1 Waiting List → Active Transition (Fix #1)
+- `trg_activate_enrollment_on_group_start` AFTER UPDATE ON `group_enrollments`:
+  - لو `status` تغيّر من `active_waiting` → `active` → يحدّث `students.subscription_status='active'` + insert notification.
+- مدخل تاني: `fn_start_group(group_id)` admin RPC → loops على enrollments ويفعّلهم atomically.
+
+### 10.2 Policy Snapshot Atomicity (Fix #2)
+- `rpc_enroll_student` يعمل INSERT في `group_enrollments` + INSERT في `policy_snapshots` **في نفس الـ transaction** (مش trigger).
+- الـ FK `policy_snapshots.enrollment_id → group_enrollments.id` يضمن الـ pair دايماً موجود.
+- Trigger إضافي `trg_block_late_snapshot` يمنع أي INSERT في `policy_snapshots` لو الـ enrollment موجود قبل > 1 ثانية.
+
+### 10.3 Compensation Session Grading (Fix #3 — قرارك)
+**القرار:** التعويضية ليها grading مستقل، لكن النتيجة بتتسجل على السيشن الأصلية اللي اتغاب فيها.
+
+Schema:
+```text
+compensations (
+  id, original_session_id, makeup_session_id,
+  student_id, status, ...
+)
+session_attendance (
+  session_id,           -- = original_session_id
+  student_id,
+  status,               -- 'present' بعد التعويض
+  graded_in_session_id  -- = makeup_session_id (للتتبع)
+)
+session_grades (
+  session_id,           -- = makeup_session_id (مكان التقييم الفعلي)
+  student_id,
+  quiz_score, assignment_score, evaluation, ...
+)
+```
+- `fn_complete_compensation(compensation_id, grades)`:
+  - INSERT grades في `session_grades` على `makeup_session_id`.
+  - UPDATE `session_attendance` للسيشن الأصلية: `status='present'`, `graded_in_session_id=makeup_session_id`.
+  - UPDATE compensation `status='completed'`.
+  - KPI recalc.
+- View `v_student_session_history` بيدمج الاتنين: الـ attendance من الأصلية + الـ grade من التعويضية.
+
+### 10.4 Restricted Recovery RPC (Fix #4)
+- `admin_approval_requests` موجود في الـ schema (Layer 0) — كويس.
+- Workflow:
+  1. `fn_request_reinstatement(student_id, reason)` → INSERT approval request (`request_type='restricted_recovery'`).
+  2. Notification للـ branch_admin.
+  3. `fn_review_approval_request(request_id, decision, note)` (admin only via RoleGuard + RLS):
+     - approved → يفك `student_blocks.is_active=false` + يحصل `reinstatement_fee` من policy + يحدّث `subscription_status='active'`.
+     - rejected → notification للـ requester مع السبب.
+- RLS على `student_blocks`: ممنوع UPDATE من أي role غير via RPC. RPC = `SECURITY DEFINER` بتتحقق `has_role(auth.uid(),'branch_admin')`.
+
+### 10.5 Content Access by Package (Fix #5 — قرارك)
+**القرار:** كل باقة ليها صلاحيات محددة على المحتوى، لكن كل الباقات عندها وصول كامل لـ assignments + quizzes + evaluations + finals.
+
+Implementation: **table منفصلة للـ mapping** (أوضح وقابلة للتعديل بدون code):
+
+```sql
+CREATE TABLE package_content_permissions (
+  package_tier  package_tier NOT NULL,
+  content_type  content_type NOT NULL,
+  is_allowed    boolean NOT NULL DEFAULT true,
+  PRIMARY KEY (package_tier, content_type)
+);
+
+-- Seed:
+-- ('squad','slides',true), ('squad','summary_video',false), ('squad','full_video',false)
+-- ('core','slides',true),  ('core','summary_video',true),  ('core','full_video',false)
+-- ('x','slides',true),     ('x','summary_video',true),     ('x','full_video',true)
+```
+
+- View `v_student_accessible_content`:
+  ```sql
+  SELECT lc.*, s.id AS student_id
+  FROM lesson_contents lc
+  JOIN group_enrollments ge ON ge.group_id = lc.group_id
+  JOIN students s ON s.id = ge.student_id
+  JOIN groups g ON g.id = ge.group_id
+  JOIN package_content_permissions pcp
+    ON pcp.package_tier = g.package_tier
+   AND pcp.content_type = lc.content_type
+  WHERE pcp.is_allowed = true
+    AND ge.status = 'active';
+  ```
+- RLS على `lesson_contents`: `EXISTS (SELECT 1 FROM v_student_accessible_content WHERE student_id = auth.uid() AND id = lesson_contents.id)` للـ student role.
+- Assignments/quizzes/finals = صلاحيات مفتوحة لكل الباقات (RLS على enrollment فقط، مش على tier).
+
+### 10.6 Absence Excuse Flow (Fix #6)
+- Reuse `admin_approval_requests` (`request_type='absence_excuse'`) بدل `absence_excuses` المنفصلة.
+- Workflow:
+  1. `fn_submit_absence_excuse(attendance_id, reason, evidence_url)`:
+     - INSERT approval request + `expires_at = now() + 72h`.
+     - Notification للـ branch_admin.
+  2. `fn_review_approval_request(request_id, decision, note)`:
+     - approved → UPDATE `session_attendance.status='excused'` + `fn_recalculate_absence_counter(student_id)` → يفك أي block ناتج من العداد.
+     - rejected → notification.
+  3. `cron_expire_pending_excuses` يومياً → expires_at < now() → status='expired' + notification.
+- View `v_student_absence_summary` للأدمن يراجع.
+
+---
+
+## 11. v2 Schema Additions الكاملة
+
+- Tables الإضافية اللي ظهرت من المراجعة:
+  - `age_groups`, `policy_snapshots`, `notification_preferences`, `admin_approval_requests`, `package_content_permissions`, `student_blocks`, `compensations`, `session_grades`, `lesson_contents`.
+- Total = **57 جدول** (بدل 48 في v2 الأصلية).
+
+---
+
+## 12. مفتوح للنقاش
 لو في scenarios إضافية (scholarships, multi-currency, corporate accounts) قولها دلوقتي عشان تتدمج في Phase 0.
 
-لما توافق على v2 هبدأ Phase 0 فوراً.
+لما توافق على v2.1 هبدأ Phase 0 فوراً بالـ DDL الكامل + RLS + RPCs + triggers + cron.
