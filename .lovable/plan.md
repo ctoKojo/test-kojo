@@ -4,65 +4,33 @@
 
 ---
 
-## 1. القرارات المتفق عليها
+## 1. القرارات المؤكدة
 
 | البند | القرار |
 |---|---|
-| Scope | Schema كامل (4 طبقات) + UI تدريجي |
+| Scope | Schema كامل (4 طبقات) + UI تدريجي على Phases |
 | Online vs Offline | الاتنين بالتوازي |
-| Payments | يدوي الآن، Gateway لاحقاً |
+| Payments | يدوي الآن (cash/visa/transfer)، Gateway لاحقاً |
 | Notifications | In-app + Email فقط |
-| Language | عربي + إنجليزي (i18n + RTL/LTR) |
+| Language | عربي + إنجليزي (i18n + RTL/LTR auto-switch) |
 | Parent ↔ Students | Many-to-many |
-| Entry Test | بنك أسئلة يديره الأدمن (Adaptive MCQ) |
-| Currency | EGP، أسعار مبدئية في seed قابلة للتعديل |
+| Entry Test | بنك أسئلة Adaptive يديره الأدمن، per age_group |
+| Currency | EGP، أسعار مبدئية في seed قابلة للتعديل من Dashboard |
+| **نقل الطالب بين فروع** | Transfer Request رسمي يوافق عليه Admin |
+| **التعويضية** | جروب تاني (نفس level) أو Private — الـ Receptionist يختار |
+| **منع الطالب** | Automatic بـ DB trigger. متسلسل: مش متعوض → منع من اللي بعدها، واللي اتمنع منها تتحسب تعويضية كمان. لو تخطى حد الغيابات → حرمان كامل (يحتاج fee للرجوع) |
+| **العمولة** | للسيلز فقط. نسبة واحدة للفرع يحددها Admin. الـ Receptionist/Admin يعينها على شخص. **مقفولة في نص الشهر** (snapshot شهري) |
+| **Sales Target** | لكل باقة (عدد طلاب) — يدخل في KPIs السيلز |
+| **KPI Weights** | snapshot أول كل شهر — مينفعش تتغير في نص الشهر |
+| **Policies** | snapshot لكل طالب عند بداية دورته (level enrollment). الطالب يكمل بالقواعد القديمة، التغييرات تطبق على الدورات الجديدة |
+| **Soft delete** | مش أولوية → Hard delete + `audit_logs` للحركات المالية والتعديلات المهمة |
+| **Files** | فيديوهات + سلايدات = URLs خارجية، PDFs على Lovable Storage |
+| **Trainer Substitution** | النظام يقترح بدلاء (نفس level + متاح في الـ slot)، Admin أو Reception يختار |
+| **Certificates** | PDF يتولد أوتوماتيك من template موحد عند نجاح الطالب في Final Exam |
 
 ---
 
-## 2. النقاط اللي محتاج نتفق عليها قبل البدء
-
-### 2.1 نقاط جوهرية (لازم نحسمها)
-
-1. **مفهوم "الفرع" (Branch):**
-   - فرع جغرافي واحد له خزن وموظفين خاصين به فقط؟
-   - أم Super Admin يقدر ينقل طالب بين فروع؟ (يفتح سيناريوهات معقدة في المالية)
-   - **اقتراحي:** الطالب ينتمي لفرع واحد، النقل يحتاج "Transfer Request" منفصل.
-
-2. **العمولة (Commission):**
-   - الـ doc بيقول "عمولة مرة واحدة عند أول دفعة مؤكدة". مين بياخدها؟ Receptionist اللي سجّل؟ أم الكل؟
-   - النسبة configurable لكل دور أم ثابتة؟
-
-3. **السيشن التعويضية:**
-   - الطالب الغايب يقدر يحضر مع جروب تاني نفس المستوى؟ أم Private session مع المدرب فقط؟
-   - لو حضر مع جروب تاني، الـ attendance يتسجل في الجروبين أم في واحد بس؟
-   - **اقتراحي:** الاتنين متاحين — الـ Receptionist يختار.
-
-4. **منع الطالب من السيشن الجاية:**
-   - "لو ما اخدش تعويضية → يُمنع من الجاية" — المنع automatic بـ trigger ولا الـ Receptionist يقرر؟
-   - الطالب الممنوع لسه بيدفع؟ السيشن بتتعد عليه؟
-
-5. **Trainer Substitution:**
-   - لما المدرب يطلب إجازة، النظام بيقترح بديل أوتوماتيك (بناءً على availability + level) ولا الأدمن يختار يدوي؟
-
-6. **KPIs:**
-   - الحساب الشهري بـ pg_cron — لو الـ weights اتغيرت في نص الشهر، الـ KPI للشهر ده يتحسب بالقديمة ولا الجديدة؟
-   - **اقتراحي:** snapshot للـ weights في `kpi_snapshots` عند بداية كل شهر.
-
-7. **System Policies التاريخية:**
-   - "السياسات الجديدة مالهاش تأثير رجعي" — يعني نخزن `valid_from`/`valid_to` لكل policy ونرجع للقديمة لو الحدث قديم؟
-   - **اقتراحي:** `policy_versions` table + كل حدث مرتبط بـ `policy_version_id`.
-
-### 2.2 نقاط تشغيلية
-
-8. **حذف البيانات:** Soft delete (`deleted_at`) لكل الجداول الأساسية ولا Hard delete؟ **اقتراحي:** Soft للطلاب/الموظفين/الجروبات، Hard للـ logs.
-9. **Audit Trail:** هل نسجل كل تعديل (مين عدّل/إمتى/إيه القيمة القديمة)؟ مهم للماليات. **اقتراحي:** نعم، جدول `audit_logs` عام.
-10. **Files:** صور الطلاب، شهادات، فواتير PDF → Lovable Cloud Storage (buckets منفصلة بـ RLS).
-11. **Certificates:** نولّدها PDF أوتوماتيك عند تخرج الطالب؟ Template موحد؟
-12. **Online content (فيديوهات/سلايدات):** نرفعها على Storage مباشرة ولا CDN خارجي (Vimeo/Bunny)؟ **اقتراحي:** Storage + signed URLs مع expiry قصير لمنع التحميل.
-
----
-
-## 3. الـ Architecture المقترح
+## 2. الـ Architecture المقترح
 
 ### 3.1 الـ Stack
 
@@ -229,40 +197,45 @@ src/
 
 ---
 
-## 5. مبادئ لمنع الـ Spaghetti Code
+## 4. مبادئ لمنع الـ Spaghetti Code
 
 1. **Server-first business logic:** أي قاعدة بزنس (validation, calculation, money) في `createServerFn` أو DB trigger — **مفيش** business logic في components.
 2. **Single source of truth للسياسات:** كل rule مالي/تشغيلي في `system_policies` + helper functions، مش hardcoded.
-3. **Zod everywhere:** كل input من user → zod schema. كل response من server → typed.
-4. **DB constraints قوية:** FKs, CHECK constraints, unique indexes — مش بس application-level.
-5. **Triggers للـ invariants:** أي قاعدة "لازم" تكون صحيحة دائماً → DB trigger (مش `useEffect`).
-6. **No god-components:** أقصى 200 سطر للـ component. أي حاجة أكتر تتقسم.
-7. **Feature isolation:** ممنوع `features/curriculum` يـ import من `features/financial` مباشرة. التواصل عبر server functions أو shared types.
-8. **Versioning للقرارات الحساسة:** Policies + KPI weights + Prices → كلها versioned مع `valid_from`.
+3. **Policy snapshot per cycle:** كل طالب عند بداية level بياخد snapshot من السياسات السارية. التغييرات الجديدة تطبق على enrollments جديدة فقط.
+4. **Zod everywhere:** كل input من user → zod schema. كل response من server → typed.
+5. **DB constraints قوية:** FKs, CHECK constraints, unique indexes — مش بس application-level.
+6. **Triggers للـ invariants:** أي قاعدة "لازم" تكون صحيحة دائماً (منع الطالب، عمولة، خزن) → DB trigger.
+7. **No god-components:** أقصى 200 سطر للـ component. أي حاجة أكتر تتقسم.
+8. **Feature isolation:** ممنوع `features/curriculum` يـ import من `features/financial` مباشرة. التواصل عبر server functions أو shared types.
+9. **Monthly locks:** Commission rates + KPI weights → snapshot شهري، مينفعش تتغير في نص الشهر.
 
 ---
 
-## 6. التقديرات الزمنية (تقريبية)
+## 5. التقديرات الزمنية (تقريبية)
 
-| Phase | المدة المقدّرة |
-|---|---|
-| Phase 0 | 2-3 أيام |
-| Phase 1 | 4-5 أيام |
-| Phase 2 | 7-10 أيام |
-| Phase 3 | 5-7 أيام |
-| Phase 4 | 5-7 أيام |
-| Phase 5 | 5-7 أيام |
-| Phase 6 | 3-5 أيام |
+| Phase | المحتوى | المدة |
+|---|---|---|
+| Phase 0 | Foundation (Auth, i18n, Design, جداول الأساس، RLS) | 2-3 أيام |
+| Phase 1 | Curriculum Layer (DB كامل + Admin UI) | 4-5 أيام |
+| Phase 2 | Students + Operations + Attendance + Compensation + Trainer Portal | 7-10 أيام |
+| Phase 3 | Financial Layer (Treasuries, Payments, Installments, Commissions) | 5-7 أيام |
+| Phase 4 | Evaluation + Online Content + Student/Parent Portals + Certificates | 5-7 أيام |
+| Phase 5 | Staff + KPIs + Notifications + pg_cron Jobs | 5-7 أيام |
+| Phase 6 | Dashboards + Reports + Polish | 3-5 أيام |
 
-**الإجمالي:** ~5-7 أسابيع لو شغل مستمر بدون توقف.
+**الإجمالي:** ~5-7 أسابيع لو شغل مستمر.
 
 ---
 
-## 7. الخطوة التالية
+## 6. الخطوة التالية
 
-لو موافق على الـ plan ده، نبدأ بـ **Phase 0** فوراً:
-1. تفعيل Lovable Cloud
-2. Setup الـ Auth + i18n + Design system
-3. إنشاء جداول الأساس (branches, profiles, user_roles, system_policies) مع RLS
+**Phase 0 — Foundation:**
+1. تفعيل Lovable Cloud (Supabase + Auth + Storage)
+2. Setup i18n (ar/en) + RTL/LTR auto-switch + Design tokens بطابع Kojo
+3. Folder structure + Routing skeleton لكل الـ roles
+4. إنشاء جداول الأساس: `branches`, `profiles`, `user_roles`, `age_groups`, `system_policies`, `policy_snapshots`, `audit_logs`
+5. RLS + `has_role()` security definer function
+6. صفحات Login/Logout + role-based redirect لكل dashboard
 
-لكن **قبل ما نبدأ**، محتاج إجاباتك على الـ 12 نقطة في القسم 2 (أو موافقة على اقتراحاتي فيها) عشان الـ schema يطلع صح من المرة الأولى.
+بعد ما تعتمد الـ plan، نبدأ Phase 0 على طول.
+
