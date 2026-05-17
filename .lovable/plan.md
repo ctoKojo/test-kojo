@@ -286,7 +286,8 @@ features/<name>/
 
 ## 7. Frontend Patterns (نماذج جاهزة)
 
-- **Route Guard:** `_authenticated.tsx` يستخدم `beforeLoad` لقراءة الـ role والـ branch
+- **Route Guard:** `<ProtectedRoute roles={['admin']}>` wrapper يستخدم `useCurrentUser()` + `useRole()` ويعمل `<Navigate to="/login" />` لو مش مصرح
+- **Routes Tree:** `createBrowserRouter` في `router.tsx` مع nested routes per role layout
 - **Query Pattern:** factory للـ keys + `useQuery` + `useMutation` + `invalidateQueries`
 - **API Layer:** كل domain له `*.api.ts` يجمع supabase calls + rpc
 - **Edge Function Call:** `supabase.functions.invoke(name, { body })`
