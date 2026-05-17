@@ -30,7 +30,7 @@
 
 ---
 
-## 3. الـ Architecture المقترح
+## 2. الـ Architecture المقترح
 
 ### 3.1 الـ Stack
 
