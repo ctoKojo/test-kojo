@@ -1019,3 +1019,103 @@ student activated (first session attended OR 7 days passed) → status='locked_f
 - أي feature جديد قدام → يدخل في الـ layer الصح، يكتب ADR، يضيف entries في الـ matrix، صفر refactor.
 
 لما توافق على v2.3 → Phase 0: DDL كامل (83 جدول) + RLS + RPCs + triggers + cron + ADR-001 → ADR-017 + seed.
+
+---
+
+## 19. Pre-Phase-0 Additions (Master Review Outcome — v2.4)
+
+اتعملت Master Review على البلان كله (Business flows + Schema + Anti-spaghetti contract). الـ foundation قوي. النقاط دي اتضافت للـ Phase 0 DDL عشان البلان يطلع 100% solid.
+
+### 19.1 جداول جديدة (4)
+
+| # | الجدول | الغرض | الأعمدة الأساسية |
+|---|---|---|---|
+| 1 | `level_determination_rules` | mapping من entry_test tags لـ levels (أدمن يعدّل من panel) | `id, question_tag, level_id, min_correct_count, age_group_id, created_by` |
+| 2 | `package_content_access` | (package_tier × content_type) → allowed boolean | `package_tier, content_type, allowed, UNIQUE(package_tier, content_type)` |
+| 3 | `trainer_unavailability` | فترات غياب المدرب المعتمدة | `id, trainer_id, starts_at, ends_at, reason, status, approved_by` |
+| 4 | `pending_reassignment_queue` | سيشنات محتاجة استبدال مدرب | `id, session_id, original_trainer_id, reason, priority, assigned_to_reviewer, resolved_at` |
+
+### 19.2 ALTERs على جداول قائمة (2)
+
+```sql
+ALTER TABLE compensation_sessions
+  ADD COLUMN is_within_working_hours boolean NOT NULL DEFAULT true,
+  ADD COLUMN trainer_extra_pay_amount numeric(12,2) DEFAULT 0;
+
+CREATE TYPE failure_reason_type AS ENUM ('academy_fault','student_fault','pending_review');
+ALTER TABLE student_progression
+  ADD COLUMN failure_reason failure_reason_type,
+  ADD COLUMN failure_decided_by uuid REFERENCES profiles(id),
+  ADD COLUMN failure_decided_at timestamptz;
+```
+
+### 19.3 Views جديدة (1)
+
+```sql
+CREATE VIEW student_accessible_content AS
+SELECT sc.*, s.id AS student_id
+FROM session_content sc
+JOIN group_sessions gs ON gs.id = sc.session_id
+JOIN group_enrollments ge ON ge.group_id = gs.group_id
+JOIN students s ON s.id = ge.student_id
+JOIN subscriptions sub ON sub.id = ge.subscription_id AND sub.status IN ('active','active_waiting')
+JOIN package_content_access pca
+  ON pca.package_tier = sub.package_tier AND pca.content_type = sc.content_type
+WHERE pca.allowed = true;
+-- + RLS: student_id = current_student_id() OR parent_of(student_id)
+```
+
+### 19.4 FK & Constraint Fixes (3)
+
+- `policy_snapshots.enrollment_id` → FK لـ `group_enrollments.id` (RESTRICT).
+- `compensation_sessions` CHECK: `(is_within_working_hours AND trainer_extra_pay_amount=0) OR (NOT is_within_working_hours AND trainer_extra_pay_amount>0)`.
+- `level_determination_rules` UNIQUE(question_tag, age_group_id).
+
+### 19.5 RPCs جديدة (3 إضافية)
+
+| RPC | الوظيفة |
+|---|---|
+| `fn_evaluate_entry_test(student_id, answers jsonb)` | يطبق `level_determination_rules` ويرجع level + breakdown |
+| `fn_find_compensation_slot(student_id)` | يبحث عن سيشن نفس level+age_group+branch خلال أسبوع، يحسب is_within_working_hours، يرجع candidates |
+| `fn_create_solo_compensation(student_id, trainer_id, slot_at)` | سيشن منفردة + يحسب extra_pay من `system_policies.compensation.extra_pay_outside_hours` |
+
+### 19.6 Architecture Contract (مثبت رسمياً)
+
+كل rules الـ Master Review = الـ contract الرسمي. مفعّل عبر:
+
+- ESLint custom: `no-direct-supabase-in-components` (يمنع `supabase.from()` خارج `src/lib/api/`).
+- ESLint custom: `no-business-logic-in-components` (يمنع if/switch على enums حساسة).
+- PR template checklist: soft-delete، timestamptz، numeric للأموال، RoleGuard، RPC لأي money mutation.
+- CI gate: أي migration بدون ADR → fail.
+- File size: warn @ 250، error @ 300 لملفات `src/lib/api/*` (يتقسموا queries/mutations).
+
+### 19.7 Folder Structure (canonical — مثبت)
+
+```text
+src/lib/api/{domain}.ts          ← supabase calls فقط
+src/lib/auth/permissions.ts      ← single source of truth للـ RBAC
+src/lib/validators/*.schema.ts   ← Zod (UX only؛ RPC = source of truth)
+src/hooks/queries|mutations/     ← TanStack Query wrappers
+src/components/features/{domain} ← presentation فقط
+src/stores/                      ← Zustand للـ UI state بس
+src/routes/_authenticated/       ← auth-gated routes
+```
+
+### 19.8 الخلاصة (v2.4 — Phase 0 Ready)
+
+- **87 جدول** (83 + 4) على 8 layers.
+- **28 RPC** (25 + 3).
+- **17 triggers** + **10 cron jobs**.
+- Architecture contract مفعّل في ESLint + PR template + CI.
+- كل سيناريوهات Master Review (Parts 1, 5) = ✅ مغطاة.
+- صفر spaghetti، صفر break points، صفر hardcoded logic.
+
+**Phase 0 deliverables عند الموافقة:**
+1. DDL كامل (87 جدول + ENUMs + views + constraints).
+2. RLS policies (per role × per table، whitelist-based).
+3. 28 RPC (idempotent للـ money/session).
+4. 17 triggers + 10 cron jobs + helpers.
+5. Seed (system_policies، lead_sources، package_content_access، kpi_definitions).
+6. ADR-001 → ADR-017 في `docs/adr/`.
+7. ESLint custom rules + PR template + CI gate.
+8. `docs/architecture-contract.md` + `docs/kpi-definitions.md` + `docs/permissions-matrix.md`.
