@@ -4176,6 +4176,7 @@ export type Database = {
         | "dropped"
         | "transferred"
         | "frozen"
+        | "waiting"
       failure_reason_type: "academy_fault" | "student_fault" | "pending_review"
       installment_status:
         | "pending"
@@ -4429,6 +4430,7 @@ export const Constants = {
         "dropped",
         "transferred",
         "frozen",
+        "waiting",
       ],
       failure_reason_type: ["academy_fault", "student_fault", "pending_review"],
       installment_status: ["pending", "paid", "overdue", "waived", "cancelled"],
