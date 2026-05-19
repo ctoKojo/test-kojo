@@ -14,6 +14,90 @@ export type Database = {
   }
   public: {
     Tables: {
+      absence_excuses: {
+        Row: {
+          attachment_url: string | null
+          attendance_record_id: string | null
+          created_at: string
+          id: string
+          reason: string
+          rejection_reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          session_id: string
+          status: string
+          student_id: string
+          submitted_by: string | null
+          updated_at: string
+        }
+        Insert: {
+          attachment_url?: string | null
+          attendance_record_id?: string | null
+          created_at?: string
+          id?: string
+          reason: string
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          session_id: string
+          status?: string
+          student_id: string
+          submitted_by?: string | null
+          updated_at?: string
+        }
+        Update: {
+          attachment_url?: string | null
+          attendance_record_id?: string | null
+          created_at?: string
+          id?: string
+          reason?: string
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          session_id?: string
+          status?: string
+          student_id?: string
+          submitted_by?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "absence_excuses_attendance_record_id_fkey"
+            columns: ["attendance_record_id"]
+            isOneToOne: false
+            referencedRelation: "attendance_records"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "absence_excuses_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "absence_excuses_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "group_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "absence_excuses_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "absence_excuses_submitted_by_fkey"
+            columns: ["submitted_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       academic_terms: {
         Row: {
           branch_id: string
@@ -311,6 +395,87 @@ export type Database = {
           },
         ]
       }
+      attendance_records: {
+        Row: {
+          branch_id: string
+          created_at: string
+          group_id: string
+          id: string
+          is_locked: boolean
+          marked_at: string | null
+          marked_by: string | null
+          notes: string | null
+          session_id: string
+          status: string
+          student_id: string
+          updated_at: string
+        }
+        Insert: {
+          branch_id: string
+          created_at?: string
+          group_id: string
+          id?: string
+          is_locked?: boolean
+          marked_at?: string | null
+          marked_by?: string | null
+          notes?: string | null
+          session_id: string
+          status?: string
+          student_id: string
+          updated_at?: string
+        }
+        Update: {
+          branch_id?: string
+          created_at?: string
+          group_id?: string
+          id?: string
+          is_locked?: boolean
+          marked_at?: string | null
+          marked_by?: string | null
+          notes?: string | null
+          session_id?: string
+          status?: string
+          student_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_records_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_records_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_records_marked_by_fkey"
+            columns: ["marked_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_records_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "group_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_records_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_logs: {
         Row: {
           action: Database["public"]["Enums"]["audit_action"]
@@ -440,6 +605,161 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      compensation_sessions: {
+        Row: {
+          branch_id: string
+          cancel_reason: string | null
+          cancelled_at: string | null
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          duration_minutes: number
+          group_id: string
+          id: string
+          is_within_working_hours: boolean
+          original_session_id: string
+          room_id: string | null
+          scheduled_at: string
+          status: string
+          student_id: string
+          trainer_extra_pay: number
+          trainer_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          branch_id: string
+          cancel_reason?: string | null
+          cancelled_at?: string | null
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          duration_minutes?: number
+          group_id: string
+          id?: string
+          is_within_working_hours?: boolean
+          original_session_id: string
+          room_id?: string | null
+          scheduled_at: string
+          status?: string
+          student_id: string
+          trainer_extra_pay?: number
+          trainer_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          branch_id?: string
+          cancel_reason?: string | null
+          cancelled_at?: string | null
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          duration_minutes?: number
+          group_id?: string
+          id?: string
+          is_within_working_hours?: boolean
+          original_session_id?: string
+          room_id?: string | null
+          scheduled_at?: string
+          status?: string
+          student_id?: string
+          trainer_extra_pay?: number
+          trainer_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "compensation_sessions_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compensation_sessions_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compensation_sessions_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compensation_sessions_original_session_id_fkey"
+            columns: ["original_session_id"]
+            isOneToOne: false
+            referencedRelation: "group_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compensation_sessions_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compensation_sessions_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compensation_sessions_trainer_id_fkey"
+            columns: ["trainer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      consecutive_absence_tracker: {
+        Row: {
+          consecutive_absences: number
+          consecutive_missed_hw: number
+          group_id: string
+          id: string
+          last_updated: string
+          student_id: string
+        }
+        Insert: {
+          consecutive_absences?: number
+          consecutive_missed_hw?: number
+          group_id: string
+          id?: string
+          last_updated?: string
+          student_id: string
+        }
+        Update: {
+          consecutive_absences?: number
+          consecutive_missed_hw?: number
+          group_id?: string
+          id?: string
+          last_updated?: string
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "consecutive_absence_tracker_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "consecutive_absence_tracker_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       entry_test_attempts: {
         Row: {
@@ -1635,6 +1955,80 @@ export type Database = {
           },
         ]
       }
+      pending_reassignment_queue: {
+        Row: {
+          assigned_to: string | null
+          branch_id: string
+          created_at: string
+          id: string
+          notes: string | null
+          reason: string
+          resolved_at: string | null
+          resolved_by: string | null
+          session_id: string
+          status: string
+          updated_at: string
+          urgency: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          branch_id: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          reason: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          session_id: string
+          status?: string
+          updated_at?: string
+          urgency?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          branch_id?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          reason?: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          session_id?: string
+          status?: string
+          updated_at?: string
+          urgency?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pending_reassignment_queue_assigned_to_fkey"
+            columns: ["assigned_to"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pending_reassignment_queue_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pending_reassignment_queue_resolved_by_fkey"
+            columns: ["resolved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pending_reassignment_queue_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "group_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       policy_snapshots: {
         Row: {
           branch_id: string | null
@@ -2329,6 +2723,76 @@ export type Database = {
           },
         ]
       }
+      student_restriction_log: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          id: string
+          lift_reason: string | null
+          lifted_at: string | null
+          lifted_by: string | null
+          notes: string | null
+          requires_admin_approval: boolean
+          restricted_at: string
+          restriction_type: string
+          student_id: string
+          trigger_value: number | null
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          id?: string
+          lift_reason?: string | null
+          lifted_at?: string | null
+          lifted_by?: string | null
+          notes?: string | null
+          requires_admin_approval?: boolean
+          restricted_at?: string
+          restriction_type: string
+          student_id: string
+          trigger_value?: number | null
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          id?: string
+          lift_reason?: string | null
+          lifted_at?: string | null
+          lifted_by?: string | null
+          notes?: string | null
+          requires_admin_approval?: boolean
+          restricted_at?: string
+          restriction_type?: string
+          student_id?: string
+          trigger_value?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_restriction_log_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_restriction_log_lifted_by_fkey"
+            columns: ["lifted_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_restriction_log_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       student_transfers: {
         Row: {
           branch_id: string
@@ -2952,12 +3416,39 @@ export type Database = {
         }
         Returns: string
       }
+      rpc_approve_excuse: {
+        Args: {
+          p_approved: boolean
+          p_excuse_id: string
+          p_idempotency_key?: string
+          p_rejection_reason?: string
+        }
+        Returns: Json
+      }
       rpc_grade_assignment: {
         Args: {
           p_feedback?: string
           p_idempotency_key?: string
           p_score: number
           p_submission_id: string
+        }
+        Returns: Json
+      }
+      rpc_lift_restriction: {
+        Args: {
+          p_idempotency_key?: string
+          p_lift_reason: string
+          p_student_id: string
+        }
+        Returns: Json
+      }
+      rpc_mark_attendance: {
+        Args: {
+          p_idempotency_key?: string
+          p_notes?: string
+          p_session_id: string
+          p_status: string
+          p_student_id: string
         }
         Returns: Json
       }
@@ -2974,12 +3465,36 @@ export type Database = {
         }
         Returns: Json
       }
+      rpc_schedule_compensation: {
+        Args: {
+          p_duration_minutes?: number
+          p_idempotency_key?: string
+          p_is_within_working_hours?: boolean
+          p_original_session_id: string
+          p_room_id?: string
+          p_scheduled_at: string
+          p_student_id: string
+          p_trainer_extra_pay?: number
+          p_trainer_id?: string
+        }
+        Returns: Json
+      }
       rpc_submit_assignment: {
         Args: {
           p_assignment_id: string
           p_idempotency_key?: string
           p_student_id: string
           p_submission_url?: string
+        }
+        Returns: Json
+      }
+      rpc_submit_excuse: {
+        Args: {
+          p_attachment_url?: string
+          p_idempotency_key?: string
+          p_reason: string
+          p_session_id: string
+          p_student_id: string
         }
         Returns: Json
       }
