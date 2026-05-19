@@ -69,12 +69,11 @@ function LoginPage() {
       {/* Left: Gradient hero */}
       <div className="relative hidden lg:flex flex-col justify-between p-12 bg-kojo-gradient overflow-hidden">
         <div className="relative z-10 flex items-center gap-3">
-          <div className="flex size-12 items-center justify-center rounded-lg bg-white/15 backdrop-blur-sm">
-            <span className="font-title text-xl font-bold text-white">K</span>
-          </div>
-          <span className="font-title text-2xl font-bold text-white tracking-wide">
-            Kojobot
-          </span>
+          <img
+            src={logoHorizontalWhite}
+            alt="Kojobot"
+            className="h-10 w-auto object-contain"
+          />
         </div>
         <div className="relative z-10 space-y-4 text-white">
           <h2 className="font-title text-4xl font-bold leading-tight">
