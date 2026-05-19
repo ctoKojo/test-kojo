@@ -16,7 +16,13 @@ const STATS = [
 ];
 
 function DashboardPage() {
-  const { user, roles } = useAuth();
+  const { user, roles, isLoading } = useAuth();
+
+  const subtitle = isLoading
+    ? "Loading roles…"
+    : roles.length > 0
+      ? `Signed in as ${roles.join(", ").replace(/_/g, " ")}`
+      : "No roles assigned — contact your administrator";
 
   return (
     <div className="space-y-6">
@@ -24,11 +30,7 @@ function DashboardPage() {
         <h2 className="font-main text-2xl font-bold text-foreground">
           Welcome{user?.email ? `, ${user.email.split("@")[0]}` : ""}
         </h2>
-        <p className="text-sm text-muted-foreground mt-1">
-          {roles.length > 0
-            ? `Signed in as ${roles.join(", ").replace(/_/g, " ")}`
-            : "Loading roles…"}
-        </p>
+        <p className="text-sm text-muted-foreground mt-1">{subtitle}</p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
