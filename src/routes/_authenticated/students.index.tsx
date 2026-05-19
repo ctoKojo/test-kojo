@@ -9,7 +9,7 @@ import { StudentsFilters, type StudentsFiltersValue } from "@/components/feature
 import { StudentsTable } from "@/components/features/students/StudentsTable";
 import { StudentsPagination } from "@/components/features/students/StudentsPagination";
 
-export const Route = createFileRoute("/_authenticated/students")({
+export const Route = createFileRoute("/_authenticated/students/")({
   component: StudentsPage,
 });
 
