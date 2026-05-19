@@ -14,6 +14,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { logoHorizontalWhite } from "@/assets/logos";
 
 interface NavItem {
   label: string;
