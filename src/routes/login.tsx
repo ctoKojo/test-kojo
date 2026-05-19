@@ -1,7 +1,7 @@
 // Kojobot — Login (Dark + gradient hero, dark navy form card)
 // Per /DESIGN_SYSTEM.md §17: Dark theme + Gradient hero + form card on dark navy.
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import { createFileRoute, useNavigate, redirect } from "@tanstack/react-router";
 import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -29,13 +29,7 @@ function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
 
-  // Login page is dark per spec §17
-  useEffect(() => {
-    document.documentElement.classList.add("dark");
-    return () => {
-      document.documentElement.classList.remove("dark");
-    };
-  }, []);
+  // Dark theme applied globally on <html> in __root.tsx (spec §17).
 
   const handleEmailLogin = async (e: FormEvent) => {
     e.preventDefault();
