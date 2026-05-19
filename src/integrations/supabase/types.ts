@@ -1226,6 +1226,7 @@ export type Database = {
           student_id: string | null
           submitted_at: string
           trainer_id: string | null
+          trainer_name_snapshot: string | null
         }
         Insert: {
           branch_id: string
@@ -1239,6 +1240,7 @@ export type Database = {
           student_id?: string | null
           submitted_at?: string
           trainer_id?: string | null
+          trainer_name_snapshot?: string | null
         }
         Update: {
           branch_id?: string
@@ -1252,6 +1254,7 @@ export type Database = {
           student_id?: string | null
           submitted_at?: string
           trainer_id?: string | null
+          trainer_name_snapshot?: string | null
         }
         Relationships: [
           {
@@ -3859,7 +3862,8 @@ export type Database = {
           quizzes_graded: number
           student_satisfaction_score: number | null
           total_sessions: number
-          trainer_id: string
+          trainer_id: string | null
+          trainer_name_snapshot: string | null
           updated_at: string
           year: number
         }
@@ -3879,7 +3883,8 @@ export type Database = {
           quizzes_graded?: number
           student_satisfaction_score?: number | null
           total_sessions?: number
-          trainer_id: string
+          trainer_id?: string | null
+          trainer_name_snapshot?: string | null
           updated_at?: string
           year: number
         }
@@ -3899,7 +3904,8 @@ export type Database = {
           quizzes_graded?: number
           student_satisfaction_score?: number | null
           total_sessions?: number
-          trainer_id?: string
+          trainer_id?: string | null
+          trainer_name_snapshot?: string | null
           updated_at?: string
           year?: number
         }
@@ -3923,13 +3929,6 @@ export type Database = {
             columns: ["branch_id"]
             isOneToOne: false
             referencedRelation: "branches"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "trainer_kpis_trainer_id_fkey"
-            columns: ["trainer_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
