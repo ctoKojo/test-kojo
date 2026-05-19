@@ -4365,6 +4365,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_parent_of_student: {
+        Args: { _student_id: string; _user_id: string }
+        Returns: boolean
+      }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
       log_audit: {
         Args: {
@@ -4655,6 +4659,10 @@ export type Database = {
           p_student_id: string
         }
         Returns: Json
+      }
+      student_is_in_current_user_branch: {
+        Args: { _student_id: string }
+        Returns: boolean
       }
       user_has_branch_access: {
         Args: { _branch_id: string; _user_id: string }
