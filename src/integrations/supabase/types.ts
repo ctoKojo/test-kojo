@@ -1597,7 +1597,12 @@ export type Database = {
         | "transferred"
         | "frozen"
       failure_reason_type: "academy_fault" | "student_fault" | "pending_review"
-      installment_status: "pending" | "paid" | "overdue" | "waived"
+      installment_status:
+        | "pending"
+        | "paid"
+        | "overdue"
+        | "waived"
+        | "cancelled"
       lead_status:
         | "new"
         | "assigned"
@@ -1612,7 +1617,14 @@ export type Database = {
       notification_channel: "in_app" | "email" | "sms" | "push" | "whatsapp"
       notification_status: "pending" | "sent" | "failed" | "read" | "archived"
       package_tier: "squad" | "core" | "x"
-      payment_status: "pending" | "paid" | "partial" | "refunded" | "cancelled"
+      payment_status:
+        | "pending"
+        | "paid"
+        | "partial"
+        | "refunded"
+        | "cancelled"
+        | "active"
+        | "partially_refunded"
       preferred_language: "ar" | "en"
       session_status:
         | "scheduled"
@@ -1831,7 +1843,7 @@ export const Constants = {
         "frozen",
       ],
       failure_reason_type: ["academy_fault", "student_fault", "pending_review"],
-      installment_status: ["pending", "paid", "overdue", "waived"],
+      installment_status: ["pending", "paid", "overdue", "waived", "cancelled"],
       lead_status: [
         "new",
         "assigned",
@@ -1847,7 +1859,15 @@ export const Constants = {
       notification_channel: ["in_app", "email", "sms", "push", "whatsapp"],
       notification_status: ["pending", "sent", "failed", "read", "archived"],
       package_tier: ["squad", "core", "x"],
-      payment_status: ["pending", "paid", "partial", "refunded", "cancelled"],
+      payment_status: [
+        "pending",
+        "paid",
+        "partial",
+        "refunded",
+        "cancelled",
+        "active",
+        "partially_refunded",
+      ],
       preferred_language: ["ar", "en"],
       session_status: [
         "scheduled",
