@@ -4324,6 +4324,29 @@ export type Database = {
         }
         Returns: string
       }
+      rpc_apply_promo_code: {
+        Args: { _code: string; _enrollment_id: string }
+        Returns: {
+          applied_at: string
+          approved_by: string | null
+          branch_id: string
+          created_at: string
+          discount_amount: number
+          discount_pct: number | null
+          enrollment_id: string
+          id: string
+          promo_code_id: string | null
+          reason: string | null
+          source: Database["public"]["Enums"]["discount_source"]
+          student_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "enrollment_discounts"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       rpc_approve_excuse: {
         Args: {
           p_approved: boolean
@@ -4332,6 +4355,85 @@ export type Database = {
           p_rejection_reason?: string
         }
         Returns: Json
+      }
+      rpc_approve_kpi_bonus: {
+        Args: { _approved_amount: number; _notes?: string; _payroll_id: string }
+        Returns: {
+          base_pay: number
+          branch_id: string
+          commission_pay: number
+          compensation_config_id: string | null
+          compensation_session_pay: number
+          computed_at: string
+          created_at: string
+          id: string
+          kpi_bonus_approved: number
+          kpi_bonus_approved_at: string | null
+          kpi_bonus_approved_by: string | null
+          kpi_bonus_pending: number
+          model: Database["public"]["Enums"]["compensation_model"]
+          month: number
+          net_pay: number | null
+          notes: string | null
+          paid_at: string | null
+          penalty_amount: number
+          session_pay: number
+          status: Database["public"]["Enums"]["payroll_status"]
+          trainer_id: string
+          training_pay: number
+          updated_at: string
+          year: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "trainer_monthly_payroll"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      rpc_assign_trainer: {
+        Args: {
+          _effective_from?: string
+          _group_id: string
+          _idempotency_key?: string
+          _new_trainer_id: string
+        }
+        Returns: Json
+      }
+      rpc_calculate_trainer_payroll: {
+        Args: { _month: number; _trainer_id: string; _year: number }
+        Returns: {
+          base_pay: number
+          branch_id: string
+          commission_pay: number
+          compensation_config_id: string | null
+          compensation_session_pay: number
+          computed_at: string
+          created_at: string
+          id: string
+          kpi_bonus_approved: number
+          kpi_bonus_approved_at: string | null
+          kpi_bonus_approved_by: string | null
+          kpi_bonus_pending: number
+          model: Database["public"]["Enums"]["compensation_model"]
+          month: number
+          net_pay: number | null
+          notes: string | null
+          paid_at: string | null
+          penalty_amount: number
+          session_pay: number
+          status: Database["public"]["Enums"]["payroll_status"]
+          trainer_id: string
+          training_pay: number
+          updated_at: string
+          year: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "trainer_monthly_payroll"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       rpc_compute_branch_kpis: {
         Args: {
@@ -4350,6 +4452,18 @@ export type Database = {
           p_month: number
           p_student_id: string
           p_year: number
+        }
+        Returns: Json
+      }
+      rpc_enroll_student: {
+        Args: {
+          _billing_type: Database["public"]["Enums"]["billing_type"]
+          _group_id: string
+          _idempotency_key?: string
+          _package_id: string
+          _payment_method?: string
+          _promo_code?: string
+          _student_id: string
         }
         Returns: Json
       }
@@ -4416,6 +4530,34 @@ export type Database = {
           p_to_level_id?: string
         }
         Returns: Json
+      }
+      rpc_request_unavailability: {
+        Args: {
+          _ends_at: string
+          _idempotency_key?: string
+          _reason: string
+          _starts_at: string
+        }
+        Returns: {
+          branch_id: string
+          created_at: string
+          ends_at: string
+          id: string
+          reason: string
+          review_notes: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          starts_at: string
+          status: Database["public"]["Enums"]["unavailability_status"]
+          trainer_id: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "trainer_unavailability"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       rpc_schedule_compensation: {
         Args: {
