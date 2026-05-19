@@ -361,6 +361,127 @@ export type Database = {
           },
         ]
       }
+      expenses: {
+        Row: {
+          amount: number
+          branch_id: string
+          category: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          expense_date: string
+          id: string
+          idempotency_key: string
+          receipt_url: string | null
+          treasury_id: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          branch_id: string
+          category: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          expense_date?: string
+          id?: string
+          idempotency_key: string
+          receipt_url?: string | null
+          treasury_id: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          branch_id?: string
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          expense_date?: string
+          id?: string
+          idempotency_key?: string
+          receipt_url?: string | null
+          treasury_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expenses_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expenses_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expenses_treasury_id_fkey"
+            columns: ["treasury_id"]
+            isOneToOne: false
+            referencedRelation: "treasury_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fee_plans: {
+        Row: {
+          branch_id: string
+          created_at: string
+          deleted_at: string | null
+          discount_pct: number
+          id: string
+          installments_count: number
+          is_active: boolean
+          name: string
+          package_id: string
+          updated_at: string
+        }
+        Insert: {
+          branch_id: string
+          created_at?: string
+          deleted_at?: string | null
+          discount_pct?: number
+          id?: string
+          installments_count?: number
+          is_active?: boolean
+          name: string
+          package_id: string
+          updated_at?: string
+        }
+        Update: {
+          branch_id?: string
+          created_at?: string
+          deleted_at?: string | null
+          discount_pct?: number
+          id?: string
+          installments_count?: number
+          is_active?: boolean
+          name?: string
+          package_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fee_plans_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fee_plans_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "packages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       group_enrollments: {
         Row: {
           completed_at: string | null
@@ -637,6 +758,86 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: []
+      }
+      installments: {
+        Row: {
+          amount: number
+          branch_id: string
+          created_at: string
+          due_date: string
+          id: string
+          notes: string | null
+          paid_amount: number | null
+          paid_at: string | null
+          payment_id: string
+          payment_method: string | null
+          received_by: string | null
+          status: Database["public"]["Enums"]["installment_status"]
+          student_id: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          branch_id: string
+          created_at?: string
+          due_date: string
+          id?: string
+          notes?: string | null
+          paid_amount?: number | null
+          paid_at?: string | null
+          payment_id: string
+          payment_method?: string | null
+          received_by?: string | null
+          status?: Database["public"]["Enums"]["installment_status"]
+          student_id: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          branch_id?: string
+          created_at?: string
+          due_date?: string
+          id?: string
+          notes?: string | null
+          paid_amount?: number | null
+          paid_at?: string | null
+          payment_id?: string
+          payment_method?: string | null
+          received_by?: string | null
+          status?: Database["public"]["Enums"]["installment_status"]
+          student_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "installments_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "installments_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "installments_received_by_fkey"
+            columns: ["received_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "installments_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       level_determination_rules: {
         Row: {
@@ -1058,6 +1259,96 @@ export type Database = {
           },
         ]
       }
+      payments: {
+        Row: {
+          amount_paid: number
+          amount_total: number
+          branch_id: string
+          created_at: string
+          created_by: string | null
+          discount_amount: number
+          fee_plan_id: string | null
+          id: string
+          idempotency_key: string
+          notes: string | null
+          payment_method: string
+          status: Database["public"]["Enums"]["payment_status"]
+          student_id: string
+          subscription_id: string
+          updated_at: string
+        }
+        Insert: {
+          amount_paid?: number
+          amount_total: number
+          branch_id: string
+          created_at?: string
+          created_by?: string | null
+          discount_amount?: number
+          fee_plan_id?: string | null
+          id?: string
+          idempotency_key: string
+          notes?: string | null
+          payment_method?: string
+          status?: Database["public"]["Enums"]["payment_status"]
+          student_id: string
+          subscription_id: string
+          updated_at?: string
+        }
+        Update: {
+          amount_paid?: number
+          amount_total?: number
+          branch_id?: string
+          created_at?: string
+          created_by?: string | null
+          discount_amount?: number
+          fee_plan_id?: string | null
+          id?: string
+          idempotency_key?: string
+          notes?: string | null
+          payment_method?: string
+          status?: Database["public"]["Enums"]["payment_status"]
+          student_id?: string
+          subscription_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_fee_plan_id_fkey"
+            columns: ["fee_plan_id"]
+            isOneToOne: false
+            referencedRelation: "fee_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       policy_snapshots: {
         Row: {
           branch_id: string | null
@@ -1134,6 +1425,93 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      refunds: {
+        Row: {
+          amount: number
+          approved_by: string | null
+          branch_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          idempotency_key: string
+          payment_id: string
+          policy_applied: Json | null
+          processed_at: string | null
+          reason: string
+          status: string
+          student_id: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          approved_by?: string | null
+          branch_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          idempotency_key: string
+          payment_id: string
+          policy_applied?: Json | null
+          processed_at?: string | null
+          reason: string
+          status?: string
+          student_id: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          approved_by?: string | null
+          branch_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          idempotency_key?: string
+          payment_id?: string
+          policy_applied?: Json | null
+          processed_at?: string | null
+          reason?: string
+          status?: string
+          student_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "refunds_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "refunds_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "refunds_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "refunds_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "refunds_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       rooms: {
         Row: {
@@ -1253,6 +1631,156 @@ export type Database = {
           },
         ]
       }
+      siblings_discounts: {
+        Row: {
+          applied_at: string
+          discount_amount: number
+          discount_pct: number
+          id: string
+          installment_id: string
+          parent_id: string
+          student_id: string
+        }
+        Insert: {
+          applied_at?: string
+          discount_amount: number
+          discount_pct: number
+          id?: string
+          installment_id: string
+          parent_id: string
+          student_id: string
+        }
+        Update: {
+          applied_at?: string
+          discount_amount?: number
+          discount_pct?: number
+          id?: string
+          installment_id?: string
+          parent_id?: string
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "siblings_discounts_installment_id_fkey"
+            columns: ["installment_id"]
+            isOneToOne: false
+            referencedRelation: "installments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "siblings_discounts_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "parents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "siblings_discounts_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      student_transfers: {
+        Row: {
+          branch_id: string
+          created_at: string
+          financial_notes: string | null
+          from_branch_id: string | null
+          from_group_id: string | null
+          id: string
+          idempotency_key: string
+          sessions_carried: number
+          student_id: string
+          to_branch_id: string | null
+          to_group_id: string | null
+          transfer_type: Database["public"]["Enums"]["transfer_type"]
+          transferred_by: string | null
+        }
+        Insert: {
+          branch_id: string
+          created_at?: string
+          financial_notes?: string | null
+          from_branch_id?: string | null
+          from_group_id?: string | null
+          id?: string
+          idempotency_key: string
+          sessions_carried?: number
+          student_id: string
+          to_branch_id?: string | null
+          to_group_id?: string | null
+          transfer_type: Database["public"]["Enums"]["transfer_type"]
+          transferred_by?: string | null
+        }
+        Update: {
+          branch_id?: string
+          created_at?: string
+          financial_notes?: string | null
+          from_branch_id?: string | null
+          from_group_id?: string | null
+          id?: string
+          idempotency_key?: string
+          sessions_carried?: number
+          student_id?: string
+          to_branch_id?: string | null
+          to_group_id?: string | null
+          transfer_type?: Database["public"]["Enums"]["transfer_type"]
+          transferred_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_transfers_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_transfers_from_branch_id_fkey"
+            columns: ["from_branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_transfers_from_group_id_fkey"
+            columns: ["from_group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_transfers_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_transfers_to_branch_id_fkey"
+            columns: ["to_branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_transfers_to_group_id_fkey"
+            columns: ["to_group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_transfers_transferred_by_fkey"
+            columns: ["transferred_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       students: {
         Row: {
           age_group_id: string | null
@@ -1340,6 +1868,92 @@ export type Database = {
           },
         ]
       }
+      subscriptions: {
+        Row: {
+          branch_id: string
+          cancel_reason: string | null
+          cancelled_at: string | null
+          created_at: string
+          ends_at: string | null
+          enrollment_id: string
+          id: string
+          package_id: string
+          pause_reason: string | null
+          paused_at: string | null
+          remaining_sessions: number
+          started_at: string | null
+          status: Database["public"]["Enums"]["subscription_status"]
+          student_id: string
+          subscription_end_date: string | null
+          updated_at: string
+        }
+        Insert: {
+          branch_id: string
+          cancel_reason?: string | null
+          cancelled_at?: string | null
+          created_at?: string
+          ends_at?: string | null
+          enrollment_id: string
+          id?: string
+          package_id: string
+          pause_reason?: string | null
+          paused_at?: string | null
+          remaining_sessions?: number
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["subscription_status"]
+          student_id: string
+          subscription_end_date?: string | null
+          updated_at?: string
+        }
+        Update: {
+          branch_id?: string
+          cancel_reason?: string | null
+          cancelled_at?: string | null
+          created_at?: string
+          ends_at?: string | null
+          enrollment_id?: string
+          id?: string
+          package_id?: string
+          pause_reason?: string | null
+          paused_at?: string | null
+          remaining_sessions?: number
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["subscription_status"]
+          student_id?: string
+          subscription_end_date?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscriptions_enrollment_id_fkey"
+            columns: ["enrollment_id"]
+            isOneToOne: false
+            referencedRelation: "group_enrollments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscriptions_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "packages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscriptions_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       system_policies: {
         Row: {
           category: string
@@ -1372,6 +1986,123 @@ export type Database = {
           value?: Json
         }
         Relationships: []
+      }
+      treasury_accounts: {
+        Row: {
+          account_type: string
+          balance: number
+          branch_id: string
+          created_at: string
+          currency: string
+          deleted_at: string | null
+          id: string
+          is_active: boolean
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          account_type: string
+          balance?: number
+          branch_id: string
+          created_at?: string
+          currency?: string
+          deleted_at?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          account_type?: string
+          balance?: number
+          branch_id?: string
+          created_at?: string
+          currency?: string
+          deleted_at?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "treasury_accounts_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      treasury_movements: {
+        Row: {
+          amount: number
+          balance_after: number
+          branch_id: string
+          created_at: string
+          description: string | null
+          direction: string
+          id: string
+          idempotency_key: string
+          movement_type: Database["public"]["Enums"]["treasury_movement_type"]
+          performed_by: string | null
+          related_entity_id: string | null
+          related_entity_type: string | null
+          treasury_id: string
+        }
+        Insert: {
+          amount: number
+          balance_after: number
+          branch_id: string
+          created_at?: string
+          description?: string | null
+          direction: string
+          id?: string
+          idempotency_key: string
+          movement_type: Database["public"]["Enums"]["treasury_movement_type"]
+          performed_by?: string | null
+          related_entity_id?: string | null
+          related_entity_type?: string | null
+          treasury_id: string
+        }
+        Update: {
+          amount?: number
+          balance_after?: number
+          branch_id?: string
+          created_at?: string
+          description?: string | null
+          direction?: string
+          id?: string
+          idempotency_key?: string
+          movement_type?: Database["public"]["Enums"]["treasury_movement_type"]
+          performed_by?: string | null
+          related_entity_id?: string | null
+          related_entity_type?: string | null
+          treasury_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "treasury_movements_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "treasury_movements_performed_by_fkey"
+            columns: ["performed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "treasury_movements_treasury_id_fkey"
+            columns: ["treasury_id"]
+            isOneToOne: false
+            referencedRelation: "treasury_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
@@ -1498,6 +2229,55 @@ export type Database = {
     }
     Functions: {
       current_user_branch_ids: { Args: never; Returns: string[] }
+      fn_create_payment_with_installments: {
+        Args: {
+          p_amount_total: number
+          p_fee_plan_id: string
+          p_idempotency_key: string
+          p_installments: Json
+          p_notes?: string
+          p_payment_method: string
+          p_student_id: string
+          p_subscription_id: string
+        }
+        Returns: string
+      }
+      fn_recalculate_sibling_discounts: {
+        Args: { p_parent_id: string }
+        Returns: undefined
+      }
+      fn_record_expense: {
+        Args: {
+          p_amount: number
+          p_category: string
+          p_description: string
+          p_expense_date: string
+          p_idempotency_key: string
+          p_treasury_id: string
+        }
+        Returns: string
+      }
+      fn_record_income: {
+        Args: {
+          p_amount: number
+          p_description: string
+          p_idempotency_key: string
+          p_related_entity_id: string
+          p_related_entity_type: string
+          p_treasury_id: string
+        }
+        Returns: string
+      }
+      fn_transfer_between_accounts: {
+        Args: {
+          p_amount: number
+          p_description: string
+          p_from_treasury_id: string
+          p_idempotency_key: string
+          p_to_treasury_id: string
+        }
+        Returns: undefined
+      }
       get_policy: { Args: { _key: string }; Returns: Json }
       has_any_role: {
         Args: {
@@ -1597,7 +2377,12 @@ export type Database = {
         | "transferred"
         | "frozen"
       failure_reason_type: "academy_fault" | "student_fault" | "pending_review"
-      installment_status: "pending" | "paid" | "overdue" | "waived"
+      installment_status:
+        | "pending"
+        | "paid"
+        | "overdue"
+        | "waived"
+        | "cancelled"
       lead_status:
         | "new"
         | "assigned"
@@ -1612,7 +2397,14 @@ export type Database = {
       notification_channel: "in_app" | "email" | "sms" | "push" | "whatsapp"
       notification_status: "pending" | "sent" | "failed" | "read" | "archived"
       package_tier: "squad" | "core" | "x"
-      payment_status: "pending" | "paid" | "partial" | "refunded" | "cancelled"
+      payment_status:
+        | "pending"
+        | "paid"
+        | "partial"
+        | "refunded"
+        | "cancelled"
+        | "active"
+        | "partially_refunded"
       preferred_language: "ar" | "en"
       session_status:
         | "scheduled"
@@ -1630,7 +2422,15 @@ export type Database = {
         | "expired"
         | "cancelled"
       subscription_type: "offline" | "online" | "hybrid"
+      transfer_type: "group_change" | "branch_change" | "level_change"
       treasury_account_type: "cash" | "wallet" | "bank"
+      treasury_movement_type:
+        | "income"
+        | "expense"
+        | "transfer_in"
+        | "transfer_out"
+        | "adjustment"
+        | "refund"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1831,7 +2631,7 @@ export const Constants = {
         "frozen",
       ],
       failure_reason_type: ["academy_fault", "student_fault", "pending_review"],
-      installment_status: ["pending", "paid", "overdue", "waived"],
+      installment_status: ["pending", "paid", "overdue", "waived", "cancelled"],
       lead_status: [
         "new",
         "assigned",
@@ -1847,7 +2647,15 @@ export const Constants = {
       notification_channel: ["in_app", "email", "sms", "push", "whatsapp"],
       notification_status: ["pending", "sent", "failed", "read", "archived"],
       package_tier: ["squad", "core", "x"],
-      payment_status: ["pending", "paid", "partial", "refunded", "cancelled"],
+      payment_status: [
+        "pending",
+        "paid",
+        "partial",
+        "refunded",
+        "cancelled",
+        "active",
+        "partially_refunded",
+      ],
       preferred_language: ["ar", "en"],
       session_status: [
         "scheduled",
@@ -1867,7 +2675,16 @@ export const Constants = {
         "cancelled",
       ],
       subscription_type: ["offline", "online", "hybrid"],
+      transfer_type: ["group_change", "branch_change", "level_change"],
       treasury_account_type: ["cash", "wallet", "bank"],
+      treasury_movement_type: [
+        "income",
+        "expense",
+        "transfer_in",
+        "transfer_out",
+        "adjustment",
+        "refund",
+      ],
     },
   },
 } as const
