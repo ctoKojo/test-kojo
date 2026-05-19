@@ -1462,6 +1462,7 @@ export type Database = {
           session_number: number
           status: Database["public"]["Enums"]["session_status"]
           trainer_id: string
+          tsrange_slot: unknown
           updated_at: string
           version: number
         }
@@ -1478,6 +1479,7 @@ export type Database = {
           session_number: number
           status?: Database["public"]["Enums"]["session_status"]
           trainer_id: string
+          tsrange_slot?: unknown
           updated_at?: string
           version?: number
         }
@@ -1494,6 +1496,7 @@ export type Database = {
           session_number?: number
           status?: Database["public"]["Enums"]["session_status"]
           trainer_id?: string
+          tsrange_slot?: unknown
           updated_at?: string
           version?: number
         }
@@ -3895,7 +3898,7 @@ export type Database = {
           kpi_bonus_pending: number
           model: Database["public"]["Enums"]["compensation_model"]
           month: number
-          net_pay: number | null
+          net_amount: number | null
           notes: string | null
           paid_at: string | null
           penalty_amount: number
@@ -3921,7 +3924,7 @@ export type Database = {
           kpi_bonus_pending?: number
           model: Database["public"]["Enums"]["compensation_model"]
           month: number
-          net_pay?: number | null
+          net_amount?: number | null
           notes?: string | null
           paid_at?: string | null
           penalty_amount?: number
@@ -3947,7 +3950,7 @@ export type Database = {
           kpi_bonus_pending?: number
           model?: Database["public"]["Enums"]["compensation_model"]
           month?: number
-          net_pay?: number | null
+          net_amount?: number | null
           notes?: string | null
           paid_at?: string | null
           penalty_amount?: number
@@ -4373,7 +4376,7 @@ export type Database = {
           kpi_bonus_pending: number
           model: Database["public"]["Enums"]["compensation_model"]
           month: number
-          net_pay: number | null
+          net_amount: number | null
           notes: string | null
           paid_at: string | null
           penalty_amount: number
@@ -4417,7 +4420,7 @@ export type Database = {
           kpi_bonus_pending: number
           model: Database["public"]["Enums"]["compensation_model"]
           month: number
-          net_pay: number | null
+          net_amount: number | null
           notes: string | null
           paid_at: string | null
           penalty_amount: number
