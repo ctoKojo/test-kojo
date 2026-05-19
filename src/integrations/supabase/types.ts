@@ -156,6 +156,7 @@ export type Database = {
           reviewed_at: string | null
           reviewed_by: string | null
           status: Database["public"]["Enums"]["approval_status"]
+          student_id: string | null
           subject_id: string
           subject_table: string
           updated_at: string
@@ -173,6 +174,7 @@ export type Database = {
           reviewed_at?: string | null
           reviewed_by?: string | null
           status?: Database["public"]["Enums"]["approval_status"]
+          student_id?: string | null
           subject_id: string
           subject_table: string
           updated_at?: string
@@ -190,6 +192,7 @@ export type Database = {
           reviewed_at?: string | null
           reviewed_by?: string | null
           status?: Database["public"]["Enums"]["approval_status"]
+          student_id?: string | null
           subject_id?: string
           subject_table?: string
           updated_at?: string
@@ -200,6 +203,13 @@ export type Database = {
             columns: ["branch_id"]
             isOneToOne: false
             referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "admin_approval_requests_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
             referencedColumns: ["id"]
           },
         ]
@@ -670,6 +680,7 @@ export type Database = {
           city: string | null
           code: string
           created_at: string
+          deleted_at: string | null
           id: string
           is_active: boolean
           name: string
@@ -683,6 +694,7 @@ export type Database = {
           city?: string | null
           code: string
           created_at?: string
+          deleted_at?: string | null
           id?: string
           is_active?: boolean
           name: string
@@ -696,6 +708,7 @@ export type Database = {
           city?: string | null
           code?: string
           created_at?: string
+          deleted_at?: string | null
           id?: string
           is_active?: boolean
           name?: string
@@ -1454,6 +1467,7 @@ export type Database = {
           close_reason: string | null
           closed_by: string | null
           created_at: string
+          deleted_at: string | null
           group_id: string
           id: string
           room_id: string | null
@@ -1471,6 +1485,7 @@ export type Database = {
           close_reason?: string | null
           closed_by?: string | null
           created_at?: string
+          deleted_at?: string | null
           group_id: string
           id?: string
           room_id?: string | null
@@ -1488,6 +1503,7 @@ export type Database = {
           close_reason?: string | null
           closed_by?: string | null
           created_at?: string
+          deleted_at?: string | null
           group_id?: string
           id?: string
           room_id?: string | null
@@ -4492,17 +4508,31 @@ export type Database = {
         }
         Returns: Json
       }
-      rpc_issue_warning: {
-        Args: {
-          p_description?: string
-          p_idempotency_key?: string
-          p_severity: string
-          p_student_id: string
-          p_title: string
-          p_warning_type: string
-        }
-        Returns: Json
-      }
+      rpc_issue_warning:
+        | {
+            Args: {
+              p_description?: string
+              p_idempotency_key?: string
+              p_severity: string
+              p_student_id: string
+              p_title: string
+              p_warning_type: string
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
+              p_branch_id?: string
+              p_description?: string
+              p_idempotency_key?: string
+              p_reason?: string
+              p_severity: string
+              p_student_id: string
+              p_title: string
+              p_warning_type: string
+            }
+            Returns: Json
+          }
       rpc_lift_restriction: {
         Args: {
           p_idempotency_key?: string
