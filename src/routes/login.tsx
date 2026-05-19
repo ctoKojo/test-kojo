@@ -29,13 +29,7 @@ function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
 
-  // Login page is dark per spec §17
-  useEffect(() => {
-    document.documentElement.classList.add("dark");
-    return () => {
-      document.documentElement.classList.remove("dark");
-    };
-  }, []);
+  // Dark theme applied globally on <html> in __root.tsx (spec §17).
 
   const handleEmailLogin = async (e: FormEvent) => {
     e.preventDefault();
