@@ -25,7 +25,7 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { label: "Dashboard", to: "/dashboard", icon: LayoutDashboard },
-  { label: "Students", to: "/students", icon: Users, disabled: true },
+  { label: "Students", to: "/students", icon: Users },
   { label: "Groups", to: "/groups", icon: Layers, disabled: true },
   { label: "Sessions", to: "/sessions", icon: Video, disabled: true },
   { label: "Finance", to: "/finance", icon: Wallet, disabled: true },
