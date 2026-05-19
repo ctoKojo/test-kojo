@@ -280,6 +280,328 @@ export type Database = {
         }
         Relationships: []
       }
+      entry_test_attempts: {
+        Row: {
+          answers: Json
+          branch_id: string
+          confirmed_at: string | null
+          confirmed_by: string | null
+          confirmed_level_id: string | null
+          created_at: string
+          id: string
+          recommended_level_id: string | null
+          score_pct: number | null
+          status: string
+          student_id: string
+          updated_at: string
+        }
+        Insert: {
+          answers?: Json
+          branch_id: string
+          confirmed_at?: string | null
+          confirmed_by?: string | null
+          confirmed_level_id?: string | null
+          created_at?: string
+          id?: string
+          recommended_level_id?: string | null
+          score_pct?: number | null
+          status?: string
+          student_id: string
+          updated_at?: string
+        }
+        Update: {
+          answers?: Json
+          branch_id?: string
+          confirmed_at?: string | null
+          confirmed_by?: string | null
+          confirmed_level_id?: string | null
+          created_at?: string
+          id?: string
+          recommended_level_id?: string | null
+          score_pct?: number | null
+          status?: string
+          student_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "entry_test_attempts_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "entry_test_attempts_confirmed_by_fkey"
+            columns: ["confirmed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "entry_test_attempts_confirmed_level_id_fkey"
+            columns: ["confirmed_level_id"]
+            isOneToOne: false
+            referencedRelation: "levels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "entry_test_attempts_recommended_level_id_fkey"
+            columns: ["recommended_level_id"]
+            isOneToOne: false
+            referencedRelation: "levels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "entry_test_attempts_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      group_enrollments: {
+        Row: {
+          completed_at: string | null
+          drop_reason: string | null
+          dropped_at: string | null
+          enrolled_at: string
+          group_id: string
+          id: string
+          package_id: string | null
+          status: Database["public"]["Enums"]["enrollment_status"]
+          student_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          drop_reason?: string | null
+          dropped_at?: string | null
+          enrolled_at?: string
+          group_id: string
+          id?: string
+          package_id?: string | null
+          status?: Database["public"]["Enums"]["enrollment_status"]
+          student_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          drop_reason?: string | null
+          dropped_at?: string | null
+          enrolled_at?: string
+          group_id?: string
+          id?: string
+          package_id?: string | null
+          status?: Database["public"]["Enums"]["enrollment_status"]
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_enrollments_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "group_enrollments_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "packages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "group_enrollments_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      group_sessions: {
+        Row: {
+          branch_id: string
+          close_reason: string | null
+          closed_by: string | null
+          created_at: string
+          group_id: string
+          id: string
+          room_id: string | null
+          scheduled_at_utc: string
+          scheduled_end_at_utc: string
+          session_number: number
+          status: Database["public"]["Enums"]["session_status"]
+          trainer_id: string
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          branch_id: string
+          close_reason?: string | null
+          closed_by?: string | null
+          created_at?: string
+          group_id: string
+          id?: string
+          room_id?: string | null
+          scheduled_at_utc: string
+          scheduled_end_at_utc: string
+          session_number: number
+          status?: Database["public"]["Enums"]["session_status"]
+          trainer_id: string
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          branch_id?: string
+          close_reason?: string | null
+          closed_by?: string | null
+          created_at?: string
+          group_id?: string
+          id?: string
+          room_id?: string | null
+          scheduled_at_utc?: string
+          scheduled_end_at_utc?: string
+          session_number?: number
+          status?: Database["public"]["Enums"]["session_status"]
+          trainer_id?: string
+          updated_at?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_sessions_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "group_sessions_closed_by_fkey"
+            columns: ["closed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "group_sessions_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "group_sessions_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "group_sessions_trainer_id_fkey"
+            columns: ["trainer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      groups: {
+        Row: {
+          branch_id: string
+          created_at: string
+          deleted_at: string | null
+          id: string
+          level_id: string
+          max_students: number
+          name: string
+          online_link: string | null
+          package_tier: Database["public"]["Enums"]["package_tier"]
+          room_id: string | null
+          schedule_meta: Json
+          starts_on: string | null
+          status: string
+          subscription_type: Database["public"]["Enums"]["subscription_type"]
+          term_id: string | null
+          trainer_id: string
+          updated_at: string
+        }
+        Insert: {
+          branch_id: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          level_id: string
+          max_students?: number
+          name: string
+          online_link?: string | null
+          package_tier: Database["public"]["Enums"]["package_tier"]
+          room_id?: string | null
+          schedule_meta?: Json
+          starts_on?: string | null
+          status?: string
+          subscription_type?: Database["public"]["Enums"]["subscription_type"]
+          term_id?: string | null
+          trainer_id: string
+          updated_at?: string
+        }
+        Update: {
+          branch_id?: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          level_id?: string
+          max_students?: number
+          name?: string
+          online_link?: string | null
+          package_tier?: Database["public"]["Enums"]["package_tier"]
+          room_id?: string | null
+          schedule_meta?: Json
+          starts_on?: string | null
+          status?: string
+          subscription_type?: Database["public"]["Enums"]["subscription_type"]
+          term_id?: string | null
+          trainer_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "groups_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "groups_level_id_fkey"
+            columns: ["level_id"]
+            isOneToOne: false
+            referencedRelation: "levels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "groups_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "groups_term_id_fkey"
+            columns: ["term_id"]
+            isOneToOne: false
+            referencedRelation: "academic_terms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "groups_trainer_id_fkey"
+            columns: ["trainer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       idempotency_keys: {
         Row: {
           completed_at: string | null
@@ -315,6 +637,137 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: []
+      }
+      level_determination_rules: {
+        Row: {
+          branch_id: string
+          created_at: string
+          id: string
+          level_id: string
+          min_score_pct: number
+          priority: number
+          question_tag: string
+        }
+        Insert: {
+          branch_id: string
+          created_at?: string
+          id?: string
+          level_id: string
+          min_score_pct: number
+          priority?: number
+          question_tag: string
+        }
+        Update: {
+          branch_id?: string
+          created_at?: string
+          id?: string
+          level_id?: string
+          min_score_pct?: number
+          priority?: number
+          question_tag?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "level_determination_rules_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "level_determination_rules_level_id_fkey"
+            columns: ["level_id"]
+            isOneToOne: false
+            referencedRelation: "levels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      level_prerequisites: {
+        Row: {
+          id: string
+          level_id: string
+          requires_level: string
+        }
+        Insert: {
+          id?: string
+          level_id: string
+          requires_level: string
+        }
+        Update: {
+          id?: string
+          level_id?: string
+          requires_level?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "level_prerequisites_level_id_fkey"
+            columns: ["level_id"]
+            isOneToOne: false
+            referencedRelation: "levels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "level_prerequisites_requires_level_fkey"
+            columns: ["requires_level"]
+            isOneToOne: false
+            referencedRelation: "levels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      levels: {
+        Row: {
+          branch_id: string
+          classwork_weight: number
+          created_at: string
+          deleted_at: string | null
+          description: string | null
+          exam_weight: number
+          id: string
+          name: string
+          order_index: number
+          passing_score: number
+          sessions_count: number
+          updated_at: string
+        }
+        Insert: {
+          branch_id: string
+          classwork_weight?: number
+          created_at?: string
+          deleted_at?: string | null
+          description?: string | null
+          exam_weight?: number
+          id?: string
+          name: string
+          order_index: number
+          passing_score?: number
+          sessions_count?: number
+          updated_at?: string
+        }
+        Update: {
+          branch_id?: string
+          classwork_weight?: number
+          created_at?: string
+          deleted_at?: string | null
+          description?: string | null
+          exam_weight?: number
+          id?: string
+          name?: string
+          order_index?: number
+          passing_score?: number
+          sessions_count?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "levels_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       notification_preferences: {
         Row: {
@@ -450,8 +903,165 @@ export type Database = {
         }
         Relationships: []
       }
+      package_content_access: {
+        Row: {
+          allowed: boolean
+          content_type: Database["public"]["Enums"]["content_type"]
+          id: string
+          tier: Database["public"]["Enums"]["package_tier"]
+        }
+        Insert: {
+          allowed?: boolean
+          content_type: Database["public"]["Enums"]["content_type"]
+          id?: string
+          tier: Database["public"]["Enums"]["package_tier"]
+        }
+        Update: {
+          allowed?: boolean
+          content_type?: Database["public"]["Enums"]["content_type"]
+          id?: string
+          tier?: Database["public"]["Enums"]["package_tier"]
+        }
+        Relationships: []
+      }
+      packages: {
+        Row: {
+          branch_id: string
+          created_at: string
+          deleted_at: string | null
+          id: string
+          is_active: boolean
+          max_students: number
+          name: string
+          price: number
+          sessions_count: number
+          tier: Database["public"]["Enums"]["package_tier"]
+          updated_at: string
+        }
+        Insert: {
+          branch_id: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          is_active?: boolean
+          max_students: number
+          name: string
+          price: number
+          sessions_count?: number
+          tier: Database["public"]["Enums"]["package_tier"]
+          updated_at?: string
+        }
+        Update: {
+          branch_id?: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          is_active?: boolean
+          max_students?: number
+          name?: string
+          price?: number
+          sessions_count?: number
+          tier?: Database["public"]["Enums"]["package_tier"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "packages_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      parent_student_links: {
+        Row: {
+          created_at: string
+          id: string
+          is_primary: boolean
+          parent_id: string
+          student_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_primary?: boolean
+          parent_id: string
+          student_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_primary?: boolean
+          parent_id?: string
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "parent_student_links_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "parents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "parent_student_links_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      parents: {
+        Row: {
+          branch_id: string
+          created_at: string
+          deleted_at: string | null
+          id: string
+          profile_id: string
+          relation_type: string
+          updated_at: string
+        }
+        Insert: {
+          branch_id: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          profile_id: string
+          relation_type?: string
+          updated_at?: string
+        }
+        Update: {
+          branch_id?: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          profile_id?: string
+          relation_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "parents_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "parents_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       policy_snapshots: {
         Row: {
+          branch_id: string | null
+          enrollment_id: string | null
           id: string
           policy_keys: string[]
           scope_id: string
@@ -460,6 +1070,8 @@ export type Database = {
           snapshotted_at: string
         }
         Insert: {
+          branch_id?: string | null
+          enrollment_id?: string | null
           id?: string
           policy_keys: string[]
           scope_id: string
@@ -468,6 +1080,8 @@ export type Database = {
           snapshotted_at?: string
         }
         Update: {
+          branch_id?: string | null
+          enrollment_id?: string | null
           id?: string
           policy_keys?: string[]
           scope_id?: string
@@ -475,7 +1089,15 @@ export type Database = {
           snapshot?: Json
           snapshotted_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_policy_snapshots_enrollment"
+            columns: ["enrollment_id"]
+            isOneToOne: false
+            referencedRelation: "group_enrollments"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -560,6 +1182,164 @@ export type Database = {
           },
         ]
       }
+      session_attendance: {
+        Row: {
+          created_at: string
+          enrollment_id: string
+          id: string
+          locked_at: string | null
+          marked_at: string | null
+          marked_by: string | null
+          notes: string | null
+          session_id: string
+          status: Database["public"]["Enums"]["attendance_status"]
+          student_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          enrollment_id: string
+          id?: string
+          locked_at?: string | null
+          marked_at?: string | null
+          marked_by?: string | null
+          notes?: string | null
+          session_id: string
+          status?: Database["public"]["Enums"]["attendance_status"]
+          student_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          enrollment_id?: string
+          id?: string
+          locked_at?: string | null
+          marked_at?: string | null
+          marked_by?: string | null
+          notes?: string | null
+          session_id?: string
+          status?: Database["public"]["Enums"]["attendance_status"]
+          student_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_attendance_enrollment_id_fkey"
+            columns: ["enrollment_id"]
+            isOneToOne: false
+            referencedRelation: "group_enrollments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "session_attendance_marked_by_fkey"
+            columns: ["marked_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "session_attendance_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "group_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "session_attendance_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      students: {
+        Row: {
+          age_group_id: string | null
+          birthdate: string | null
+          branch_id: string
+          created_at: string
+          current_group_id: string | null
+          current_level_id: string | null
+          deleted_at: string | null
+          gender: string | null
+          id: string
+          notes: string | null
+          profile_id: string
+          school: string | null
+          subscription_status: Database["public"]["Enums"]["subscription_status"]
+          updated_at: string
+        }
+        Insert: {
+          age_group_id?: string | null
+          birthdate?: string | null
+          branch_id: string
+          created_at?: string
+          current_group_id?: string | null
+          current_level_id?: string | null
+          deleted_at?: string | null
+          gender?: string | null
+          id?: string
+          notes?: string | null
+          profile_id: string
+          school?: string | null
+          subscription_status?: Database["public"]["Enums"]["subscription_status"]
+          updated_at?: string
+        }
+        Update: {
+          age_group_id?: string | null
+          birthdate?: string | null
+          branch_id?: string
+          created_at?: string
+          current_group_id?: string | null
+          current_level_id?: string | null
+          deleted_at?: string | null
+          gender?: string | null
+          id?: string
+          notes?: string | null
+          profile_id?: string
+          school?: string | null
+          subscription_status?: Database["public"]["Enums"]["subscription_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_students_current_group"
+            columns: ["current_group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "students_age_group_id_fkey"
+            columns: ["age_group_id"]
+            isOneToOne: false
+            referencedRelation: "age_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "students_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "students_current_level_id_fkey"
+            columns: ["current_level_id"]
+            isOneToOne: false
+            referencedRelation: "levels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "students_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       system_policies: {
         Row: {
           category: string
@@ -631,9 +1411,90 @@ export type Database = {
           },
         ]
       }
+      waiting_list: {
+        Row: {
+          assigned_at: string | null
+          branch_id: string
+          id: string
+          joined_at: string
+          level_id: string | null
+          notes: string | null
+          package_tier: Database["public"]["Enums"]["package_tier"] | null
+          position: number | null
+          student_id: string
+        }
+        Insert: {
+          assigned_at?: string | null
+          branch_id: string
+          id?: string
+          joined_at?: string
+          level_id?: string | null
+          notes?: string | null
+          package_tier?: Database["public"]["Enums"]["package_tier"] | null
+          position?: number | null
+          student_id: string
+        }
+        Update: {
+          assigned_at?: string | null
+          branch_id?: string
+          id?: string
+          joined_at?: string
+          level_id?: string | null
+          notes?: string | null
+          package_tier?: Database["public"]["Enums"]["package_tier"] | null
+          position?: number | null
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "waiting_list_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "waiting_list_level_id_fkey"
+            columns: ["level_id"]
+            isOneToOne: false
+            referencedRelation: "levels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "waiting_list_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
-      [_ in never]: never
+      student_accessible_content: {
+        Row: {
+          allowed: boolean | null
+          content_type: Database["public"]["Enums"]["content_type"] | null
+          group_id: string | null
+          student_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_enrollments_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "group_enrollments_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       current_user_branch_ids: { Args: never; Returns: string[] }
@@ -729,6 +1590,12 @@ export type Database = {
         | "quiz"
         | "final_exam"
         | "other"
+      enrollment_status:
+        | "active"
+        | "completed"
+        | "dropped"
+        | "transferred"
+        | "frozen"
       failure_reason_type: "academy_fault" | "student_fault" | "pending_review"
       installment_status: "pending" | "paid" | "overdue" | "waived"
       lead_status:
@@ -762,6 +1629,7 @@ export type Database = {
         | "restricted"
         | "expired"
         | "cancelled"
+      subscription_type: "offline" | "online" | "hybrid"
       treasury_account_type: "cash" | "wallet" | "bank"
     }
     CompositeTypes: {
@@ -955,6 +1823,13 @@ export const Constants = {
         "final_exam",
         "other",
       ],
+      enrollment_status: [
+        "active",
+        "completed",
+        "dropped",
+        "transferred",
+        "frozen",
+      ],
       failure_reason_type: ["academy_fault", "student_fault", "pending_review"],
       installment_status: ["pending", "paid", "overdue", "waived"],
       lead_status: [
@@ -991,6 +1866,7 @@ export const Constants = {
         "expired",
         "cancelled",
       ],
+      subscription_type: ["offline", "online", "hybrid"],
       treasury_account_type: ["cash", "wallet", "bank"],
     },
   },
