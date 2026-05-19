@@ -564,6 +564,105 @@ export type Database = {
           },
         ]
       }
+      branch_kpis: {
+        Row: {
+          academic_term_id: string
+          academy_fault_failures: number
+          active_students: number
+          avg_attendance_pct: number
+          branch_id: string
+          cancelled_sessions: number
+          completed_sessions: number
+          computed_at: string
+          created_at: string
+          dropped_students: number
+          id: string
+          month: number
+          net_revenue: number | null
+          new_enrollments: number
+          overdue_installments: number
+          promotions_count: number
+          restricted_students: number
+          retentions_count: number
+          total_expenses: number
+          total_refunds: number
+          total_revenue: number
+          total_sessions: number
+          total_students: number
+          updated_at: string
+          year: number
+        }
+        Insert: {
+          academic_term_id: string
+          academy_fault_failures?: number
+          active_students?: number
+          avg_attendance_pct?: number
+          branch_id: string
+          cancelled_sessions?: number
+          completed_sessions?: number
+          computed_at?: string
+          created_at?: string
+          dropped_students?: number
+          id?: string
+          month: number
+          net_revenue?: number | null
+          new_enrollments?: number
+          overdue_installments?: number
+          promotions_count?: number
+          restricted_students?: number
+          retentions_count?: number
+          total_expenses?: number
+          total_refunds?: number
+          total_revenue?: number
+          total_sessions?: number
+          total_students?: number
+          updated_at?: string
+          year: number
+        }
+        Update: {
+          academic_term_id?: string
+          academy_fault_failures?: number
+          active_students?: number
+          avg_attendance_pct?: number
+          branch_id?: string
+          cancelled_sessions?: number
+          completed_sessions?: number
+          computed_at?: string
+          created_at?: string
+          dropped_students?: number
+          id?: string
+          month?: number
+          net_revenue?: number | null
+          new_enrollments?: number
+          overdue_installments?: number
+          promotions_count?: number
+          restricted_students?: number
+          retentions_count?: number
+          total_expenses?: number
+          total_refunds?: number
+          total_revenue?: number
+          total_sessions?: number
+          total_students?: number
+          updated_at?: string
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "branch_kpis_academic_term_id_fkey"
+            columns: ["academic_term_id"]
+            isOneToOne: false
+            referencedRelation: "academic_terms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "branch_kpis_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       branches: {
         Row: {
           address: string | null
@@ -605,6 +704,90 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      certificates: {
+        Row: {
+          academic_term_id: string | null
+          branch_id: string
+          certificate_type: string
+          certificate_url: string | null
+          created_at: string
+          group_id: string | null
+          id: string
+          issued_at: string
+          issued_by: string | null
+          metadata: Json | null
+          student_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          academic_term_id?: string | null
+          branch_id: string
+          certificate_type: string
+          certificate_url?: string | null
+          created_at?: string
+          group_id?: string | null
+          id?: string
+          issued_at?: string
+          issued_by?: string | null
+          metadata?: Json | null
+          student_id: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          academic_term_id?: string | null
+          branch_id?: string
+          certificate_type?: string
+          certificate_url?: string | null
+          created_at?: string
+          group_id?: string | null
+          id?: string
+          issued_at?: string
+          issued_by?: string | null
+          metadata?: Json | null
+          student_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "certificates_academic_term_id_fkey"
+            columns: ["academic_term_id"]
+            isOneToOne: false
+            referencedRelation: "academic_terms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "certificates_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "certificates_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "certificates_issued_by_fkey"
+            columns: ["issued_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "certificates_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       compensation_sessions: {
         Row: {
@@ -959,6 +1142,77 @@ export type Database = {
             columns: ["package_id"]
             isOneToOne: false
             referencedRelation: "packages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      feedback_responses: {
+        Row: {
+          branch_id: string
+          comment: string | null
+          created_at: string
+          feedback_type: string
+          id: string
+          is_anonymous: boolean
+          score: number | null
+          session_id: string | null
+          student_id: string | null
+          submitted_at: string
+          trainer_id: string | null
+        }
+        Insert: {
+          branch_id: string
+          comment?: string | null
+          created_at?: string
+          feedback_type: string
+          id?: string
+          is_anonymous?: boolean
+          score?: number | null
+          session_id?: string | null
+          student_id?: string | null
+          submitted_at?: string
+          trainer_id?: string | null
+        }
+        Update: {
+          branch_id?: string
+          comment?: string | null
+          created_at?: string
+          feedback_type?: string
+          id?: string
+          is_anonymous?: boolean
+          score?: number | null
+          session_id?: string | null
+          student_id?: string | null
+          submitted_at?: string
+          trainer_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feedback_responses_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "feedback_responses_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "group_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "feedback_responses_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "feedback_responses_trainer_id_fkey"
+            columns: ["trainer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -2645,6 +2899,90 @@ export type Database = {
           },
         ]
       }
+      student_kpis: {
+        Row: {
+          academic_term_id: string
+          assignments_missed: number
+          assignments_submitted: number
+          attendance_pct: number
+          avg_assignment_score: number | null
+          avg_quiz_score: number | null
+          compensation_sessions_taken: number
+          computed_at: string
+          created_at: string
+          id: string
+          month: number
+          quizzes_failed: number
+          quizzes_passed: number
+          sessions_absent: number
+          sessions_attended: number
+          sessions_excused: number
+          student_id: string
+          updated_at: string
+          warnings_issued: number
+          year: number
+        }
+        Insert: {
+          academic_term_id: string
+          assignments_missed?: number
+          assignments_submitted?: number
+          attendance_pct?: number
+          avg_assignment_score?: number | null
+          avg_quiz_score?: number | null
+          compensation_sessions_taken?: number
+          computed_at?: string
+          created_at?: string
+          id?: string
+          month: number
+          quizzes_failed?: number
+          quizzes_passed?: number
+          sessions_absent?: number
+          sessions_attended?: number
+          sessions_excused?: number
+          student_id: string
+          updated_at?: string
+          warnings_issued?: number
+          year: number
+        }
+        Update: {
+          academic_term_id?: string
+          assignments_missed?: number
+          assignments_submitted?: number
+          attendance_pct?: number
+          avg_assignment_score?: number | null
+          avg_quiz_score?: number | null
+          compensation_sessions_taken?: number
+          computed_at?: string
+          created_at?: string
+          id?: string
+          month?: number
+          quizzes_failed?: number
+          quizzes_passed?: number
+          sessions_absent?: number
+          sessions_attended?: number
+          sessions_excused?: number
+          student_id?: string
+          updated_at?: string
+          warnings_issued?: number
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_kpis_academic_term_id_fkey"
+            columns: ["academic_term_id"]
+            isOneToOne: false
+            referencedRelation: "academic_terms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_kpis_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       student_progression_log: {
         Row: {
           academic_term_id: string
@@ -2891,6 +3229,99 @@ export type Database = {
           },
         ]
       }
+      student_warnings: {
+        Row: {
+          acknowledged_at: string | null
+          acknowledged_by: string | null
+          branch_id: string
+          created_at: string
+          description: string | null
+          id: string
+          issued_at: string
+          issued_by: string | null
+          resolution_notes: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          severity: string
+          student_id: string
+          title: string
+          updated_at: string
+          warning_type: string
+        }
+        Insert: {
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          branch_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          issued_at?: string
+          issued_by?: string | null
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          student_id: string
+          title: string
+          updated_at?: string
+          warning_type: string
+        }
+        Update: {
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          branch_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          issued_at?: string
+          issued_by?: string | null
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          student_id?: string
+          title?: string
+          updated_at?: string
+          warning_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_warnings_acknowledged_by_fkey"
+            columns: ["acknowledged_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_warnings_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_warnings_issued_by_fkey"
+            columns: ["issued_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_warnings_resolved_by_fkey"
+            columns: ["resolved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_warnings_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       students: {
         Row: {
           age_group_id: string | null
@@ -3064,6 +3495,41 @@ export type Database = {
           },
         ]
       }
+      system_health_log: {
+        Row: {
+          branch_id: string | null
+          check_type: string
+          checked_at: string
+          details: Json | null
+          id: string
+          status: string
+        }
+        Insert: {
+          branch_id?: string | null
+          check_type: string
+          checked_at?: string
+          details?: Json | null
+          id?: string
+          status?: string
+        }
+        Update: {
+          branch_id?: string | null
+          check_type?: string
+          checked_at?: string
+          details?: Json | null
+          id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "system_health_log_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       system_policies: {
         Row: {
           category: string
@@ -3096,6 +3562,91 @@ export type Database = {
           value?: Json
         }
         Relationships: []
+      }
+      trainer_kpis: {
+        Row: {
+          academic_term_id: string
+          assignments_graded: number
+          avg_attendance_pct: number
+          avg_student_score: number | null
+          branch_id: string
+          cancelled_sessions: number
+          compensation_sessions: number
+          completed_sessions: number
+          computed_at: string
+          created_at: string
+          id: string
+          month: number
+          quizzes_graded: number
+          student_satisfaction_score: number | null
+          total_sessions: number
+          trainer_id: string
+          updated_at: string
+          year: number
+        }
+        Insert: {
+          academic_term_id: string
+          assignments_graded?: number
+          avg_attendance_pct?: number
+          avg_student_score?: number | null
+          branch_id: string
+          cancelled_sessions?: number
+          compensation_sessions?: number
+          completed_sessions?: number
+          computed_at?: string
+          created_at?: string
+          id?: string
+          month: number
+          quizzes_graded?: number
+          student_satisfaction_score?: number | null
+          total_sessions?: number
+          trainer_id: string
+          updated_at?: string
+          year: number
+        }
+        Update: {
+          academic_term_id?: string
+          assignments_graded?: number
+          avg_attendance_pct?: number
+          avg_student_score?: number | null
+          branch_id?: string
+          cancelled_sessions?: number
+          compensation_sessions?: number
+          completed_sessions?: number
+          computed_at?: string
+          created_at?: string
+          id?: string
+          month?: number
+          quizzes_graded?: number
+          student_satisfaction_score?: number | null
+          total_sessions?: number
+          trainer_id?: string
+          updated_at?: string
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trainer_kpis_academic_term_id_fkey"
+            columns: ["academic_term_id"]
+            isOneToOne: false
+            referencedRelation: "academic_terms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trainer_kpis_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trainer_kpis_trainer_id_fkey"
+            columns: ["trainer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       treasury_accounts: {
         Row: {
@@ -3425,12 +3976,56 @@ export type Database = {
         }
         Returns: Json
       }
+      rpc_compute_branch_kpis: {
+        Args: {
+          p_academic_term_id: string
+          p_branch_id: string
+          p_idempotency_key?: string
+          p_month: number
+          p_year: number
+        }
+        Returns: Json
+      }
+      rpc_compute_student_kpis: {
+        Args: {
+          p_academic_term_id: string
+          p_idempotency_key?: string
+          p_month: number
+          p_student_id: string
+          p_year: number
+        }
+        Returns: Json
+      }
       rpc_grade_assignment: {
         Args: {
           p_feedback?: string
           p_idempotency_key?: string
           p_score: number
           p_submission_id: string
+        }
+        Returns: Json
+      }
+      rpc_issue_certificate: {
+        Args: {
+          p_academic_term_id?: string
+          p_certificate_type: string
+          p_certificate_url?: string
+          p_group_id?: string
+          p_idempotency_key?: string
+          p_metadata?: Json
+          p_student_id: string
+          p_title: string
+        }
+        Returns: Json
+      }
+      rpc_issue_warning: {
+        Args: {
+          p_description?: string
+          p_idempotency_key?: string
+          p_severity: string
+          p_student_id: string
+          p_title: string
+          p_warning_type: string
         }
         Returns: Json
       }
