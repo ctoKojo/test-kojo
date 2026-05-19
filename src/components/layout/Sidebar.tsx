@@ -41,13 +41,12 @@ export function Sidebar() {
   return (
     <aside className="hidden md:flex h-screen w-60 flex-col border-r border-sidebar-border bg-sidebar">
       {/* Brand */}
-      <div className="flex h-16 items-center gap-3 border-b border-sidebar-border px-6">
-        <div className="flex size-9 items-center justify-center rounded-md bg-kojo-gradient shadow-kojo-gradient">
-          <span className="font-title text-base font-bold text-white">K</span>
-        </div>
-        <span className="font-title text-lg font-bold text-sidebar-foreground tracking-wide">
-          Kojobot
-        </span>
+      <div className="flex h-16 items-center border-b border-sidebar-border px-6">
+        <img
+          src={logoHorizontalWhite}
+          alt="Kojobot"
+          className="h-8 w-auto object-contain"
+        />
       </div>
 
       {/* Nav */}
