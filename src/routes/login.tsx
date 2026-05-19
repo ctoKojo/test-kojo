@@ -1,7 +1,7 @@
 // Kojobot — Login (Dark + gradient hero, dark navy form card)
 // Per /DESIGN_SYSTEM.md §17: Dark theme + Gradient hero + form card on dark navy.
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import { createFileRoute, useNavigate, redirect } from "@tanstack/react-router";
 import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
