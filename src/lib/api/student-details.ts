@@ -205,11 +205,20 @@ export async function getStudentAttendance(
     `,
     )
     .eq("student_id", studentId)
-    .order("created_at", { ascending: false })
     .limit(limit);
 
   if (error) throw error;
-  const rows = (data ?? []) as unknown as StudentAttendanceRow[];
+  const rows = ((data ?? []) as unknown as StudentAttendanceRow[]).sort(
+    (a, b) => {
+      const da = a.session?.scheduled_at_utc
+        ? new Date(a.session.scheduled_at_utc).getTime()
+        : 0;
+      const db = b.session?.scheduled_at_utc
+        ? new Date(b.session.scheduled_at_utc).getTime()
+        : 0;
+      return db - da;
+    },
+  );
 
   const summary: StudentAttendanceSummary = {
     total: rows.length,
