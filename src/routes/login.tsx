@@ -10,6 +10,7 @@ import { KojoButton } from "@/components/ui/kojo/kojo-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { logoHorizontalWhite, logoHorizontal } from "@/assets/logos";
 
 export const Route = createFileRoute("/login")({
   beforeLoad: async () => {
