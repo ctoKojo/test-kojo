@@ -10,6 +10,7 @@ import { KojoButton } from "@/components/ui/kojo/kojo-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { logoHorizontalWhite, logoHorizontal } from "@/assets/logos";
 
 export const Route = createFileRoute("/login")({
   beforeLoad: async () => {
@@ -68,12 +69,11 @@ function LoginPage() {
       {/* Left: Gradient hero */}
       <div className="relative hidden lg:flex flex-col justify-between p-12 bg-kojo-gradient overflow-hidden">
         <div className="relative z-10 flex items-center gap-3">
-          <div className="flex size-12 items-center justify-center rounded-lg bg-white/15 backdrop-blur-sm">
-            <span className="font-title text-xl font-bold text-white">K</span>
-          </div>
-          <span className="font-title text-2xl font-bold text-white tracking-wide">
-            Kojobot
-          </span>
+          <img
+            src={logoHorizontalWhite}
+            alt="Kojobot"
+            className="h-10 w-auto object-contain"
+          />
         </div>
         <div className="relative z-10 space-y-4 text-white">
           <h2 className="font-title text-4xl font-bold leading-tight">
@@ -100,11 +100,17 @@ function LoginPage() {
       {/* Right: Form card */}
       <div className="flex items-center justify-center p-6 lg:p-12">
         <div className="w-full max-w-sm space-y-6">
-          <div className="lg:hidden flex items-center gap-3 mb-4">
-            <div className="flex size-10 items-center justify-center rounded-md bg-kojo-gradient">
-              <span className="font-title text-base font-bold text-white">K</span>
-            </div>
-            <span className="font-title text-xl font-bold text-foreground">Kojobot</span>
+          <div className="lg:hidden flex items-center mb-4">
+            <img
+              src={logoHorizontal}
+              alt="Kojobot"
+              className="h-9 w-auto object-contain dark:hidden"
+            />
+            <img
+              src={logoHorizontalWhite}
+              alt="Kojobot"
+              className="hidden h-9 w-auto object-contain dark:block"
+            />
           </div>
 
           <div className="space-y-2">
