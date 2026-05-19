@@ -9,8 +9,6 @@ import {
 } from "@tanstack/react-router";
 
 import appCss from "../styles.css?url";
-import { AuthProvider } from "@/lib/auth/AuthProvider";
-import { Toaster } from "@/components/ui/sonner";
 
 function NotFoundComponent() {
   return (
@@ -75,13 +73,17 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
+      { name: "description", content: "System Blueprint Master is an application for defining and verifying system architecture and business logic before implementation." },
       { name: "author", content: "Lovable" },
       { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { property: "og:description", content: "System Blueprint Master is an application for defining and verifying system architecture and business logic before implementation." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "Lovable App" },
+      { name: "twitter:description", content: "System Blueprint Master is an application for defining and verifying system architecture and business logic before implementation." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/408ada35-02cc-4e6f-a3f3-21d70b7666b0/id-preview-48592e14--98b4eba6-647a-4613-9baa-7ce7197e3b01.lovable.app-1779221201870.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/408ada35-02cc-4e6f-a3f3-21d70b7666b0/id-preview-48592e14--98b4eba6-647a-4613-9baa-7ce7197e3b01.lovable.app-1779221201870.png" },
     ],
     links: [
       {
@@ -115,10 +117,7 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <Outlet />
-        <Toaster richColors position="top-right" />
-      </AuthProvider>
+      <Outlet />
     </QueryClientProvider>
   );
 }
