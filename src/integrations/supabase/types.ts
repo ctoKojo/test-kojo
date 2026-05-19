@@ -815,6 +815,9 @@ export type Database = {
           id: string
           is_within_working_hours: boolean
           original_session_id: string
+          parent_confirmation_status: string
+          parent_confirmed_at: string | null
+          parent_rejection_reason: string | null
           room_id: string | null
           scheduled_at: string
           status: string
@@ -835,6 +838,9 @@ export type Database = {
           id?: string
           is_within_working_hours?: boolean
           original_session_id: string
+          parent_confirmation_status?: string
+          parent_confirmed_at?: string | null
+          parent_rejection_reason?: string | null
           room_id?: string | null
           scheduled_at: string
           status?: string
@@ -855,6 +861,9 @@ export type Database = {
           id?: string
           is_within_working_hours?: boolean
           original_session_id?: string
+          parent_confirmation_status?: string
+          parent_confirmed_at?: string | null
+          parent_rejection_reason?: string | null
           room_id?: string | null
           scheduled_at?: string
           status?: string
@@ -1470,6 +1479,8 @@ export type Database = {
           deleted_at: string | null
           group_id: string
           id: string
+          is_auto_generated: boolean
+          level_id: string | null
           room_id: string | null
           scheduled_at_utc: string
           scheduled_end_at_utc: string
@@ -1488,6 +1499,8 @@ export type Database = {
           deleted_at?: string | null
           group_id: string
           id?: string
+          is_auto_generated?: boolean
+          level_id?: string | null
           room_id?: string | null
           scheduled_at_utc: string
           scheduled_end_at_utc: string
@@ -1506,6 +1519,8 @@ export type Database = {
           deleted_at?: string | null
           group_id?: string
           id?: string
+          is_auto_generated?: boolean
+          level_id?: string | null
           room_id?: string | null
           scheduled_at_utc?: string
           scheduled_end_at_utc?: string
@@ -1536,6 +1551,13 @@ export type Database = {
             columns: ["group_id"]
             isOneToOne: false
             referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "group_sessions_level_id_fkey"
+            columns: ["level_id"]
+            isOneToOne: false
+            referencedRelation: "levels"
             referencedColumns: ["id"]
           },
           {
