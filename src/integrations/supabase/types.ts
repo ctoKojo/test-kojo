@@ -4790,6 +4790,7 @@ export type Database = {
         | "cancelled"
         | "needs_admin_review"
         | "rescheduled"
+        | "completed"
       subscription_status:
         | "pending_payment"
         | "active_waiting"
@@ -5065,6 +5066,7 @@ export const Constants = {
         "cancelled",
         "needs_admin_review",
         "rescheduled",
+        "completed",
       ],
       subscription_status: [
         "pending_payment",
