@@ -1990,6 +1990,7 @@ export type Database = {
           branch_id: string
           created_at: string
           deleted_at: string | null
+          full_price: number | null
           id: string
           is_active: boolean
           max_students: number
@@ -2003,6 +2004,7 @@ export type Database = {
           branch_id: string
           created_at?: string
           deleted_at?: string | null
+          full_price?: number | null
           id?: string
           is_active?: boolean
           max_students: number
@@ -2016,6 +2018,7 @@ export type Database = {
           branch_id?: string
           created_at?: string
           deleted_at?: string | null
+          full_price?: number | null
           id?: string
           is_active?: boolean
           max_students?: number
