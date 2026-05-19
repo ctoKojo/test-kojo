@@ -944,6 +944,51 @@ export type Database = {
           },
         ]
       }
+      enrollment_discounts: {
+        Row: {
+          applied_at: string
+          approved_by: string | null
+          branch_id: string
+          created_at: string
+          discount_amount: number
+          discount_pct: number | null
+          enrollment_id: string
+          id: string
+          promo_code_id: string | null
+          reason: string | null
+          source: Database["public"]["Enums"]["discount_source"]
+          student_id: string
+        }
+        Insert: {
+          applied_at?: string
+          approved_by?: string | null
+          branch_id: string
+          created_at?: string
+          discount_amount: number
+          discount_pct?: number | null
+          enrollment_id: string
+          id?: string
+          promo_code_id?: string | null
+          reason?: string | null
+          source: Database["public"]["Enums"]["discount_source"]
+          student_id: string
+        }
+        Update: {
+          applied_at?: string
+          approved_by?: string | null
+          branch_id?: string
+          created_at?: string
+          discount_amount?: number
+          discount_pct?: number | null
+          enrollment_id?: string
+          id?: string
+          promo_code_id?: string | null
+          reason?: string | null
+          source?: Database["public"]["Enums"]["discount_source"]
+          student_id?: string
+        }
+        Relationships: []
+      }
       entry_test_attempts: {
         Row: {
           answers: Json
@@ -1344,6 +1389,7 @@ export type Database = {
       }
       group_enrollments: {
         Row: {
+          billing_type: Database["public"]["Enums"]["billing_type"]
           completed_at: string | null
           drop_reason: string | null
           dropped_at: string | null
@@ -1355,6 +1401,7 @@ export type Database = {
           student_id: string
         }
         Insert: {
+          billing_type?: Database["public"]["Enums"]["billing_type"]
           completed_at?: string | null
           drop_reason?: string | null
           dropped_at?: string | null
@@ -1366,6 +1413,7 @@ export type Database = {
           student_id: string
         }
         Update: {
+          billing_type?: Database["public"]["Enums"]["billing_type"]
           completed_at?: string | null
           drop_reason?: string | null
           dropped_at?: string | null
@@ -2363,6 +2411,57 @@ export type Database = {
         }
         Relationships: []
       }
+      promo_codes: {
+        Row: {
+          branch_id: string | null
+          code: string
+          created_at: string
+          created_by: string | null
+          discount_amount: number | null
+          discount_pct: number | null
+          id: string
+          is_active: boolean
+          max_uses: number | null
+          notes: string | null
+          updated_at: string
+          used_count: number
+          valid_from: string
+          valid_until: string | null
+        }
+        Insert: {
+          branch_id?: string | null
+          code: string
+          created_at?: string
+          created_by?: string | null
+          discount_amount?: number | null
+          discount_pct?: number | null
+          id?: string
+          is_active?: boolean
+          max_uses?: number | null
+          notes?: string | null
+          updated_at?: string
+          used_count?: number
+          valid_from?: string
+          valid_until?: string | null
+        }
+        Update: {
+          branch_id?: string | null
+          code?: string
+          created_at?: string
+          created_by?: string | null
+          discount_amount?: number | null
+          discount_pct?: number | null
+          id?: string
+          is_active?: boolean
+          max_uses?: number | null
+          notes?: string | null
+          updated_at?: string
+          used_count?: number
+          valid_from?: string
+          valid_until?: string | null
+        }
+        Relationships: []
+      }
       quiz_attempts: {
         Row: {
           answers: Json | null
@@ -2603,6 +2702,81 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      role_compensation_rules: {
+        Row: {
+          allowed_models: Database["public"]["Enums"]["compensation_model"][]
+          created_at: string
+          default_model: Database["public"]["Enums"]["compensation_model"]
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          updated_at: string
+        }
+        Insert: {
+          allowed_models: Database["public"]["Enums"]["compensation_model"][]
+          created_at?: string
+          default_model: Database["public"]["Enums"]["compensation_model"]
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
+        }
+        Update: {
+          allowed_models?: Database["public"]["Enums"]["compensation_model"][]
+          created_at?: string
+          default_model?: Database["public"]["Enums"]["compensation_model"]
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      role_kpi_bonus_rules: {
+        Row: {
+          bonus_amount: number
+          branch_id: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          is_active: boolean
+          kpi_code: string
+          max_threshold: number | null
+          min_threshold: number | null
+          notes: string | null
+          penalty_amount: number
+          role: Database["public"]["Enums"]["app_role"]
+          updated_at: string
+        }
+        Insert: {
+          bonus_amount?: number
+          branch_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          kpi_code: string
+          max_threshold?: number | null
+          min_threshold?: number | null
+          notes?: string | null
+          penalty_amount?: number
+          role: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
+        }
+        Update: {
+          bonus_amount?: number
+          branch_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          kpi_code?: string
+          max_threshold?: number | null
+          min_threshold?: number | null
+          notes?: string | null
+          penalty_amount?: number
+          role?: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
+        }
+        Relationships: []
       }
       rooms: {
         Row: {
@@ -3566,6 +3740,60 @@ export type Database = {
         }
         Relationships: []
       }
+      trainer_compensation_config: {
+        Row: {
+          base_monthly_amount: number
+          branch_id: string
+          commission_pct: number
+          created_at: string
+          created_by: string | null
+          effective_from: string
+          effective_to: string | null
+          hourly_rate: number
+          id: string
+          model: Database["public"]["Enums"]["compensation_model"]
+          notes: string | null
+          per_session_rate: number
+          trainer_id: string
+          training_session_pay: number
+          updated_at: string
+        }
+        Insert: {
+          base_monthly_amount?: number
+          branch_id: string
+          commission_pct?: number
+          created_at?: string
+          created_by?: string | null
+          effective_from?: string
+          effective_to?: string | null
+          hourly_rate?: number
+          id?: string
+          model: Database["public"]["Enums"]["compensation_model"]
+          notes?: string | null
+          per_session_rate?: number
+          trainer_id: string
+          training_session_pay?: number
+          updated_at?: string
+        }
+        Update: {
+          base_monthly_amount?: number
+          branch_id?: string
+          commission_pct?: number
+          created_at?: string
+          created_by?: string | null
+          effective_from?: string
+          effective_to?: string | null
+          hourly_rate?: number
+          id?: string
+          model?: Database["public"]["Enums"]["compensation_model"]
+          notes?: string | null
+          per_session_rate?: number
+          trainer_id?: string
+          training_session_pay?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       trainer_kpis: {
         Row: {
           academic_term_id: string
@@ -3650,6 +3878,132 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      trainer_monthly_payroll: {
+        Row: {
+          base_pay: number
+          branch_id: string
+          commission_pay: number
+          compensation_config_id: string | null
+          compensation_session_pay: number
+          computed_at: string
+          created_at: string
+          id: string
+          kpi_bonus_approved: number
+          kpi_bonus_approved_at: string | null
+          kpi_bonus_approved_by: string | null
+          kpi_bonus_pending: number
+          model: Database["public"]["Enums"]["compensation_model"]
+          month: number
+          net_pay: number | null
+          notes: string | null
+          paid_at: string | null
+          penalty_amount: number
+          session_pay: number
+          status: Database["public"]["Enums"]["payroll_status"]
+          trainer_id: string
+          training_pay: number
+          updated_at: string
+          year: number
+        }
+        Insert: {
+          base_pay?: number
+          branch_id: string
+          commission_pay?: number
+          compensation_config_id?: string | null
+          compensation_session_pay?: number
+          computed_at?: string
+          created_at?: string
+          id?: string
+          kpi_bonus_approved?: number
+          kpi_bonus_approved_at?: string | null
+          kpi_bonus_approved_by?: string | null
+          kpi_bonus_pending?: number
+          model: Database["public"]["Enums"]["compensation_model"]
+          month: number
+          net_pay?: number | null
+          notes?: string | null
+          paid_at?: string | null
+          penalty_amount?: number
+          session_pay?: number
+          status?: Database["public"]["Enums"]["payroll_status"]
+          trainer_id: string
+          training_pay?: number
+          updated_at?: string
+          year: number
+        }
+        Update: {
+          base_pay?: number
+          branch_id?: string
+          commission_pay?: number
+          compensation_config_id?: string | null
+          compensation_session_pay?: number
+          computed_at?: string
+          created_at?: string
+          id?: string
+          kpi_bonus_approved?: number
+          kpi_bonus_approved_at?: string | null
+          kpi_bonus_approved_by?: string | null
+          kpi_bonus_pending?: number
+          model?: Database["public"]["Enums"]["compensation_model"]
+          month?: number
+          net_pay?: number | null
+          notes?: string | null
+          paid_at?: string | null
+          penalty_amount?: number
+          session_pay?: number
+          status?: Database["public"]["Enums"]["payroll_status"]
+          trainer_id?: string
+          training_pay?: number
+          updated_at?: string
+          year?: number
+        }
+        Relationships: []
+      }
+      trainer_unavailability: {
+        Row: {
+          branch_id: string
+          created_at: string
+          ends_at: string
+          id: string
+          reason: string
+          review_notes: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          starts_at: string
+          status: Database["public"]["Enums"]["unavailability_status"]
+          trainer_id: string
+          updated_at: string
+        }
+        Insert: {
+          branch_id: string
+          created_at?: string
+          ends_at: string
+          id?: string
+          reason: string
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          starts_at: string
+          status?: Database["public"]["Enums"]["unavailability_status"]
+          trainer_id: string
+          updated_at?: string
+        }
+        Update: {
+          branch_id?: string
+          created_at?: string
+          ends_at?: string
+          id?: string
+          reason?: string
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          starts_at?: string
+          status?: Database["public"]["Enums"]["unavailability_status"]
+          trainer_id?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       treasury_accounts: {
         Row: {
@@ -4149,6 +4503,7 @@ export type Database = {
         | "approval"
         | "export"
         | "other"
+      billing_type: "monthly" | "full_level"
       call_recording_status:
         | "recording"
         | "uploading"
@@ -4162,6 +4517,12 @@ export type Database = {
         | "paid"
         | "clawed_back"
         | "cancelled"
+      compensation_model:
+        | "fixed_monthly"
+        | "hourly_session"
+        | "paid_training"
+        | "unpaid_training"
+        | "fixed_plus_commission"
       content_type:
         | "slides"
         | "summary_video"
@@ -4170,6 +4531,11 @@ export type Database = {
         | "quiz"
         | "final_exam"
         | "other"
+      discount_source:
+        | "sibling"
+        | "promo_code"
+        | "manual_admin"
+        | "full_level_price"
       enrollment_status:
         | "active"
         | "completed"
@@ -4206,6 +4572,12 @@ export type Database = {
         | "cancelled"
         | "active"
         | "partially_refunded"
+      payroll_status:
+        | "draft"
+        | "pending_approval"
+        | "approved"
+        | "paid"
+        | "cancelled"
       preferred_language: "ar" | "en"
       session_status:
         | "scheduled"
@@ -4232,6 +4604,7 @@ export type Database = {
         | "transfer_out"
         | "adjustment"
         | "refund"
+      unavailability_status: "pending" | "approved" | "rejected" | "cancelled"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -4400,6 +4773,7 @@ export const Constants = {
         "export",
         "other",
       ],
+      billing_type: ["monthly", "full_level"],
       call_recording_status: [
         "recording",
         "uploading",
@@ -4415,6 +4789,13 @@ export const Constants = {
         "clawed_back",
         "cancelled",
       ],
+      compensation_model: [
+        "fixed_monthly",
+        "hourly_session",
+        "paid_training",
+        "unpaid_training",
+        "fixed_plus_commission",
+      ],
       content_type: [
         "slides",
         "summary_video",
@@ -4423,6 +4804,12 @@ export const Constants = {
         "quiz",
         "final_exam",
         "other",
+      ],
+      discount_source: [
+        "sibling",
+        "promo_code",
+        "manual_admin",
+        "full_level_price",
       ],
       enrollment_status: [
         "active",
@@ -4458,6 +4845,13 @@ export const Constants = {
         "active",
         "partially_refunded",
       ],
+      payroll_status: [
+        "draft",
+        "pending_approval",
+        "approved",
+        "paid",
+        "cancelled",
+      ],
       preferred_language: ["ar", "en"],
       session_status: [
         "scheduled",
@@ -4487,6 +4881,7 @@ export const Constants = {
         "adjustment",
         "refund",
       ],
+      unavailability_status: ["pending", "approved", "rejected", "cancelled"],
     },
   },
 } as const
