@@ -4508,31 +4508,17 @@ export type Database = {
         }
         Returns: Json
       }
-      rpc_issue_warning:
-        | {
-            Args: {
-              p_description?: string
-              p_idempotency_key?: string
-              p_severity: string
-              p_student_id: string
-              p_title: string
-              p_warning_type: string
-            }
-            Returns: Json
-          }
-        | {
-            Args: {
-              p_branch_id?: string
-              p_description?: string
-              p_idempotency_key?: string
-              p_reason?: string
-              p_severity: string
-              p_student_id: string
-              p_title: string
-              p_warning_type: string
-            }
-            Returns: Json
-          }
+      rpc_issue_warning: {
+        Args: {
+          p_description?: string
+          p_idempotency_key?: string
+          p_severity: string
+          p_student_id: string
+          p_title: string
+          p_warning_type: string
+        }
+        Returns: Json
+      }
       rpc_lift_restriction: {
         Args: {
           p_idempotency_key?: string
