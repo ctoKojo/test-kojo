@@ -100,11 +100,17 @@ function LoginPage() {
       {/* Right: Form card */}
       <div className="flex items-center justify-center p-6 lg:p-12">
         <div className="w-full max-w-sm space-y-6">
-          <div className="lg:hidden flex items-center gap-3 mb-4">
-            <div className="flex size-10 items-center justify-center rounded-md bg-kojo-gradient">
-              <span className="font-title text-base font-bold text-white">K</span>
-            </div>
-            <span className="font-title text-xl font-bold text-foreground">Kojobot</span>
+          <div className="lg:hidden flex items-center mb-4">
+            <img
+              src={logoHorizontal}
+              alt="Kojobot"
+              className="h-9 w-auto object-contain dark:hidden"
+            />
+            <img
+              src={logoHorizontalWhite}
+              alt="Kojobot"
+              className="hidden h-9 w-auto object-contain dark:block"
+            />
           </div>
 
           <div className="space-y-2">
