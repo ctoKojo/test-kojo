@@ -1,66 +1,98 @@
-# Phase 0 Audit — Chunks 1–4 Status Report
+# Chunk 7 — Corrected Migration Plan
 
-تم فحص كل اللي اتعمل من بداية المشروع لحد دلوقتي. ده تقرير شامل بحالة كل حاجة.
+بناءً على فحص الـ DB الفعلي + إجابات البيزنس لوجيك. الهدف: إغلاق Phase 0 بشكل صحيح ومتسق مع الـ schema الموجود (مفيش schema mismatch، مفيش حاجة بتتعمل مرتين).
 
-## 1. Database — مطابق للخطة 100%
+## القرارات (Business Logic)
 
-**48 جدول + 1 view** موجودين فعليًا في الـ DB، مطابقين لكل تشانك:
+| القرار | القيمة |
+|---|---|
+| Subscription | كل level له `monthly_price` و `full_level_price`. الطالب يختار وقت الـ enrollment. **No switching** وسط الليفيل. `full_level` ليست خصم — سعر مستقل. |
+| Compensation models | `fixed_monthly`, `hourly_session`, `paid_training`, `unpaid_training`, `fixed_plus_commission`. لكل رول `allowed_models` set مختلف. |
+| Hourly pay | يعتمد على مدة الـ session الفعلية (`scheduled_end_at_utc - scheduled_at_utc`) فقط لو الـ session = `completed`. |
+| KPI bonus | per-role rules في جدول مستقل. حساب تلقائي شهري → موافقة إدمن قبل الصرف. |
+| Sibling discount | تلقائي من `system_policies`، **stackable** مع coupon. |
+| Promo codes | جدول مستقل بصلاحية + حد استخدام. |
+| Manual discount | بإذن إدمن (عبر `admin_approval_requests`). |
 
-| Chunk | المطلوب | الموجود | الحالة |
-|---|---|---|---|
-| 1 — Identity/Config | 15 | 15 | ✓ |
-| 2 — Academic/Operations | 14 | 14 | ✓ |
-| 3 — Financial | 10 | 10 | ✓ |
-| 4 — Assessments/Progression | 9 | 9 | ✓ |
-| **Total** | **48** | **48 + view** | ✓ |
+## الجداول الجديدة (10)
 
-- كل جدول عنده Primary Key (0 بدون PK).
-- **RLS مفعّلة على كل الـ 48 جدول** (0 جداول بدون RLS).
-- 23 enum، كلهم متسقين مع الـ schema.
-- 6 RLS helpers شغّالين: `has_role`, `has_any_role`, `is_super_admin`, `current_user_branch_ids`, `get_policy`, `log_audit`.
-- 19 function (12 trigger fn + 4 financial RPC + 4 academic RPC + الـ exam/quiz pass triggers).
-- Triggers على كل الـ tables المطلوبة (snapshot policies, capacity validation, attendance lock, treasury balance, sibling discount, auto-grading).
-
-## 2. Code Organization — مفيش سباجيتي
-
-- `src/lib/api/*.ts` — كلها stubs فاضية (`export {};`) بتعليق TODO يربط كل ملف بالـ chunk المناسب. ده مقصود — UI لسه ما بنتش.
-- `src/lib/auth/{useAuth.ts, RoleGuard.tsx, permissions.ts}` — stubs بتعليق متى تتنفذ.
-- `src/routes/` — البنية صحيحة: `__root.tsx`, `index.tsx` (redirect لـ /login), `login.tsx`, `_authenticated/route.tsx` (layout pathless), `_authenticated/dashboard.tsx`.
-- `routeTree.gen.ts` متولّد تلقائيًا — مفيش تعديل يدوي.
-- `DESIGN_SYSTEM.md` في الـ root، ولسه ما اتترجمش لـ `styles.css` (مؤجل عن قصد لحد ما UI تبدأ).
-- مفيش أي ملف بيلف business logic، مفيش direct supabase calls في components، مفيش duplicate clients.
-
-## 3. ملاحظات بسيطة من اللينتر (22 تحذير، أغلبها مقصود)
-
-- **17 تحذير "SECURITY DEFINER callable by signed-in users"** — دي helpers زي `has_role`, `is_super_admin`, `current_user_branch_ids`, `get_policy`, `log_audit`. لازم تكون قابلة للنداء من المستخدمين علشان الـ RLS policies تشتغل. ده by design ومذكور في الخطة.
-- **1 تحذير Extension in Public** — `btree_gist` (مطلوب للـ exclusion constraints على overlapping schedules). مقصود.
-- **4 تحذيرات "Public Can Execute"** — دي مشكلة حقيقية بسيطة:
-  - `rpc_grade_assignment`, `rpc_record_progression`, `rpc_submit_assignment`, `rpc_submit_quiz_attempt` (من Chunk 4) ناقصها `REVOKE EXECUTE ... FROM PUBLIC, anon`. لازم تتمنع من anon (مش signed-in users).
-
-## 4. خلاصة
-
-**الـ 4 chunks تمام ومتوافقين مع الخطة.** الـ DB structure، الـ RLS، الـ triggers، والـ RPCs كلها شغّالة. مفيش سباجيتي في الكود. الـ frontend stubs مرتبة ومُعلّقة كويس.
-
-في حاجة واحدة صغيرة عايزة hardening قبل ما ننتقل لـ Chunk 5: نمنع anon من نداء الـ 4 RPCs بتاعة Chunk 4.
-
-## 5. الخطة المقترحة
-
-### Migration تصحيحية (سطر واحد لكل RPC)
-
-```sql
-REVOKE EXECUTE ON FUNCTION public.rpc_grade_assignment(...)  FROM PUBLIC, anon;
-REVOKE EXECUTE ON FUNCTION public.rpc_record_progression(...)FROM PUBLIC, anon;
-REVOKE EXECUTE ON FUNCTION public.rpc_submit_assignment(...) FROM PUBLIC, anon;
-REVOKE EXECUTE ON FUNCTION public.rpc_submit_quiz_attempt(...) FROM PUBLIC, anon;
+```text
+1. trainer_unavailability           — طلبات إجازة/عدم توفر للمدربين
+2. trainer_compensation_config      — model + rates لكل مدرب (history)
+3. role_compensation_rules          — allowed_models لكل رول (validation)
+4. trainer_monthly_payroll          — كشف رواتب شهري
+5. role_kpi_bonus_rules             — قواعد البونص per-role
+6. promo_codes                      — أكواد خصم
+7. enrollment_discounts             — audit كل الخصومات المطبقة على enrollment
 ```
 
-### بعد كده
+## التعديلات على جداول موجودة
 
-- نأكد اللينتر نزل من 22 لـ 18 تحذير (الـ 18 الباقيين by design).
-- بعدها جاهزين تمامًا لـ **Chunk 5**.
+| الجدول | التعديل |
+|---|---|
+| `packages` | إضافة `full_level_price numeric(12,2)` (alongside `price` الشهري) |
+| `group_enrollments` | إضافة `billing_type` enum (`monthly` / `full_level`) + `package_id` (موجود لكن قد يكون اختياري) |
+| `enrollment_status` enum | إضافة قيمة `waiting` (للـ waiting-list) |
 
-## ما هو خارج النطاق دلوقتي
+## Enums جديدة
 
-- ترجمة `DESIGN_SYSTEM.md` لـ tokens في `styles.css`.
-- بناء أي UI أو ملء stubs في `src/lib/api/`.
-- Chunk 5 (Compensation sessions, trainer unavailability, staff profiles, KPIs).
+```sql
+compensation_model:  fixed_monthly | hourly_session | paid_training | unpaid_training | fixed_plus_commission
+billing_type:        monthly | full_level
+discount_source:     sibling | promo_code | manual_admin | full_level_price
+```
+
+## RPCs (4 + 2 supplementary)
+
+| RPC | الوظيفة |
+|---|---|
+| `rpc_enroll_student` | يسجل الطالب في group + ينشئ subscription + payment + installments + يطبق sibling/coupon discounts |
+| `rpc_assign_trainer` | يعيد تعيين مدرب لمجموعة + يحدّث `group_sessions` المستقبلية من `effective_from` |
+| `rpc_request_unavailability` | يسجل طلب عدم توفر للمدرب مع overlap check |
+| `rpc_calculate_trainer_payroll` | يحسب base + session_pay + KPI bonus pending لشهر معين |
+| `rpc_approve_kpi_bonus` | الإدمن يوافق على البونص (يحرك من pending → approved) |
+| `rpc_apply_promo_code` | validate + يربط كود بـ enrollment |
+
+## Triggers
+
+| Trigger | الجدول | الغرض |
+|---|---|---|
+| `trg_waiting_list_promote` | `group_enrollments` AFTER UPDATE | لما enrollment يبقى `dropped`/`completed`، أول `waiting` في نفس الـ group يتحول `active` |
+| `trg_validate_trainer_comp_model` | `trainer_compensation_config` BEFORE INSERT/UPDATE | يتأكد إن الـ model مسموح للرول بتاع المدرب |
+| `trg_validate_billing_type` | `group_enrollments` BEFORE INSERT | يتأكد إن `full_level` متاح في الـ package (يعني `full_level_price IS NOT NULL`) |
+
+## RLS Policies
+
+كل الجداول الجديدة:
+- **read**: `has_any_role(super_admin, branch_admin, reception)` + scope بـ `current_user_branch_ids()`
+- **write**: `super_admin` أو `branch_admin` للجدول. `trainer_unavailability` المدرب يقدر يكتب طلب لنفسه فقط.
+- `enrollment_discounts`: قراءة للـ student/parent عن طريق join على `students`/`parent_student_links` (نفس pattern الموجود).
+
+## الـ Naming Conventions الصحيحة (لازم نلتزم بيها)
+
+- ✅ `has_any_role(auth.uid(), ARRAY[...]::app_role[])` — ليس `profiles.role`
+- ✅ `set_updated_at()` trigger function — ليس `fn_set_updated_at`
+- ✅ `get_policy('key')` — ليس `fn_get_active_policy`
+- ✅ `idempotency_keys` (key, operation, response, expires_at)
+- ✅ `log_audit(actor, action, resource_type, resource_id, branch_id, before, after)`
+- ✅ كل RPC: `SECURITY DEFINER` + `SET search_path = public` + `REVOKE EXECUTE ... FROM PUBLIC, anon`
+
+## ما هو خارج النطاق الآن
+
+- UI / frontend code — يبدأ بعد Phase 0 يخلص ويتأكد بكل الـ checks.
+- Edge Functions — نستخدم TanStack server functions لاحقاً.
+- ترجمة `DESIGN_SYSTEM.md` لـ tokens — Phase 1.
+
+## ترتيب التنفيذ
+
+1. Migration A (Enums + Schema additions): enums الجديدة + أعمدة جديدة على `packages`/`group_enrollments` + `enrollment_status += waiting`.
+2. Migration B (New Tables + RLS): الـ 7 جداول الجديدة + RLS + indexes.
+3. Migration C (RPCs + Triggers): الـ 6 RPCs + الـ 3 triggers + REVOKE statements.
+4. Linter check → يفترض يفضل على 18 تحذير by-design.
+5. Seed `role_compensation_rules` defaults (trainer = all 4 models, others = fixed_monthly).
+6. تحديث `src/integrations/supabase/types.ts` يتولد تلقائياً.
+
+## بعد ما تخلص
+
+- Phase 0 = 100% complete.
+- جاهزين لـ Phase 1 (UI): نبدأ بتطبيق `DESIGN_SYSTEM.md` كـ tokens في `styles.css`، وبعدها login/auth بشكل صحيح.
