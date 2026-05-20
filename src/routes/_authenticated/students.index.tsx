@@ -8,6 +8,7 @@ import { useAuth } from "@/lib/auth/useAuth";
 import { StudentsFilters, type StudentsFiltersValue } from "@/components/features/students/StudentsFilters";
 import { StudentsTable } from "@/components/features/students/StudentsTable";
 import { StudentsPagination } from "@/components/features/students/StudentsPagination";
+import { AddStudentDialog } from "@/components/features/students/AddStudentDialog";
 
 export const Route = createFileRoute("/_authenticated/students/")({
   component: StudentsPage,
@@ -18,6 +19,8 @@ const PAGE_SIZE = 25;
 function StudentsPage() {
   const { hasRole } = useAuth();
   const isSuperAdmin = hasRole("super_admin");
+  const canCreate = hasRole("super_admin") || hasRole("branch_admin") || hasRole("reception");
+  const [addOpen, setAddOpen] = useState(false);
 
   const [filters, setFilters] = useState<StudentsFiltersValue>({
     search: "",
@@ -82,8 +85,9 @@ function StudentsPage() {
           <Button
             size="sm"
             className="bg-kojo-gradient text-white border-transparent hover:opacity-90"
-            disabled
-            title="Coming soon"
+            disabled={!canCreate}
+            title={canCreate ? "Add a new student" : "You don't have permission"}
+            onClick={() => setAddOpen(true)}
           >
             <Plus className="mr-2 size-4" strokeWidth={1.5} />
             Add student
@@ -122,6 +126,8 @@ function StudentsPage() {
           onPageChange={setPage}
         />
       )}
+
+      <AddStudentDialog open={addOpen} onOpenChange={setAddOpen} />
     </div>
   );
 }

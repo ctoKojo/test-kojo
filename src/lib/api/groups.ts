@@ -131,9 +131,69 @@ export async function listLevelsForFilter(): Promise<
   return data ?? [];
 }
 
+/** List trainers for the trainer dropdown when creating a group. */
+export async function listTrainersForSelect(branchId?: string | null): Promise<
+  Array<{ id: string; full_name: string | null }>
+> {
+  let rolesQ = supabase
+    .from("user_roles")
+    .select("user_id")
+    .eq("role", "trainer")
+    .is("revoked_at", null);
+  if (branchId) rolesQ = rolesQ.eq("branch_id", branchId);
+  const { data: rolesData, error: rolesErr } = await rolesQ;
+  if (rolesErr) throw rolesErr;
+  const ids = Array.from(new Set((rolesData ?? []).map((r) => r.user_id)));
+  if (ids.length === 0) return [];
+  const { data: profs, error: profErr } = await supabase
+    .from("profiles")
+    .select("id, full_name")
+    .in("id", ids)
+    .order("full_name");
+  if (profErr) throw profErr;
+  return profs ?? [];
+}
+
+export interface CreateGroupInput {
+  name: string;
+  branch_id: string;
+  level_id: string;
+  trainer_id: string;
+  package_tier: "squad" | "core" | "x";
+  subscription_type: "offline" | "online" | "hybrid";
+  online_link?: string | null;
+  max_students: number;
+  starts_on?: string | null;
+}
+
+export async function createGroup(input: CreateGroupInput): Promise<{ id: string }> {
+  const payload = {
+    name: input.name.trim(),
+    branch_id: input.branch_id,
+    level_id: input.level_id,
+    trainer_id: input.trainer_id,
+    package_tier: input.package_tier,
+    subscription_type: input.subscription_type,
+    online_link: input.subscription_type === "offline" ? null : input.online_link ?? null,
+    max_students: input.max_students,
+    starts_on: input.starts_on || null,
+    status: "active" as const,
+  };
+  const { data, error } = await supabase
+    .from("groups")
+    .insert(payload)
+    .select("id")
+    .single();
+  if (error) throw error;
+  return { id: data.id };
+}
+
 export const GROUP_STATUSES = [
   "pending",
   "active",
   "completed",
   "cancelled",
 ] as const;
+
+export const PACKAGE_TIERS = ["squad", "core", "x"] as const;
+export const SUBSCRIPTION_TYPES = ["offline", "online", "hybrid"] as const;
