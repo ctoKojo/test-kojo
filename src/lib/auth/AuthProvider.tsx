@@ -118,6 +118,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setSession(existing);
       setUser(existing?.user ?? null);
       if (existing?.user) {
+        lastUserId = existing.user.id;
         await loadProfile(existing.user.id);
       }
       setIsLoading(false);
