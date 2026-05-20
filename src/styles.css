@@ -13,9 +13,10 @@
   font-display: swap;
 }
 
-/* Decog is a tight display face — give it breathing room by default */
+/* Decog is a tight display face — give it breathing room and keep it light */
 .font-title {
   letter-spacing: 0.15em;
+  font-weight: 400;
 }
 
 @custom-variant dark (&:is(.dark *));
