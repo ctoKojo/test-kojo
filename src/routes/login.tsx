@@ -1,8 +1,8 @@
 // Kojobot — Login (Dark + gradient hero, dark navy form card)
 // Per /DESIGN_SYSTEM.md §17: Dark theme + Gradient hero + form card on dark navy.
 
-import { useState, type FormEvent } from "react";
-import { createFileRoute, useNavigate, redirect } from "@tanstack/react-router";
+import { useEffect, useState, type FormEvent } from "react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
@@ -11,25 +11,32 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { logoHorizontalWhite, logoHorizontal } from "@/assets/logos";
+import { useAuth } from "@/lib/auth/useAuth";
+import { AuthLoadingScreen } from "@/components/shared/AuthLoadingScreen";
 
 export const Route = createFileRoute("/login")({
-  beforeLoad: async () => {
-    const { data } = await supabase.auth.getSession();
-    if (data.session) {
-      throw redirect({ to: "/dashboard" });
-    }
-  },
   component: LoginPage,
 });
 
 function LoginPage() {
   const navigate = useNavigate();
+  const { isAuthenticated, isLoading } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
 
   // Dark theme applied globally on <html> in __root.tsx (spec §17).
+
+  useEffect(() => {
+    if (!isLoading && isAuthenticated) {
+      navigate({ to: "/dashboard", replace: true });
+    }
+  }, [isAuthenticated, isLoading, navigate]);
+
+  if (isLoading || isAuthenticated) {
+    return <AuthLoadingScreen />;
+  }
 
   const handleEmailLogin = async (e: FormEvent) => {
     e.preventDefault();
