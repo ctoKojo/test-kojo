@@ -7,7 +7,7 @@
 //  - other roles → first active branch from user_roles
 //  - revoked_at IS NULL is required for a role to count
 
-import { createContext, useContext, useEffect, useState, useCallback } from "react";
+import { createContext, useContext, useEffect, useRef, useState, useCallback } from "react";
 import { useRouter } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -42,9 +42,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [branchIds, setBranchIds] = useState<string[]>([]);
   const [activeBranchId, setActiveBranchId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const loadedProfileForUserRef = useRef<string | null>(null);
 
   // Fetch roles + branches for a user
   const loadProfile = useCallback(async (uid: string) => {
+    if (loadedProfileForUserRef.current === uid) return;
+
     const { data, error } = await supabase
       .from("user_roles")
       .select("role, branch_id")
@@ -58,6 +61,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setActiveBranchId(null);
       return;
     }
+
+    loadedProfileForUserRef.current = uid;
 
     const userRoles = (data ?? []).map((r) => r.role as AppRole);
     const uniqueRoles = Array.from(new Set(userRoles));
@@ -101,6 +106,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           loadProfile(newSession.user.id);
         }, 0);
       } else if (!newSession?.user) {
+        loadedProfileForUserRef.current = null;
         setRoles([]);
         setBranchIds([]);
         setActiveBranchId(null);
@@ -121,6 +127,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         lastUserId = existing.user.id;
         await loadProfile(existing.user.id);
       } else {
+        loadedProfileForUserRef.current = null;
         setRoles([]);
         setBranchIds([]);
         setActiveBranchId(null);
@@ -147,6 +154,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await supabase.auth.signOut();
     setSession(null);
     setUser(null);
+    loadedProfileForUserRef.current = null;
     setRoles([]);
     setBranchIds([]);
     setActiveBranchId(null);
