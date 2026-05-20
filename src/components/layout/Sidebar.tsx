@@ -29,8 +29,8 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Groups", to: "/groups", icon: Layers },
   { label: "Sessions", to: "/sessions", icon: Video },
   { label: "Finance", to: "/finance", icon: Wallet },
-  { label: "Reports", to: "/reports", icon: BarChart2, disabled: true },
-  { label: "Settings", to: "/settings", icon: Settings, disabled: true },
+  { label: "Reports", to: "/reports", icon: BarChart2 },
+  { label: "Settings", to: "/settings", icon: Settings },
 ];
 
 export function Sidebar() {
