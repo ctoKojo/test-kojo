@@ -16,6 +16,7 @@ import { Route as AuthenticatedDashboardRouteImport } from './routes/_authentica
 import { Route as AuthenticatedStudentsIndexRouteImport } from './routes/_authenticated/students.index'
 import { Route as AuthenticatedGroupsIndexRouteImport } from './routes/_authenticated/groups.index'
 import { Route as AuthenticatedStudentsStudentIdRouteImport } from './routes/_authenticated/students.$studentId'
+import { Route as AuthenticatedSessionsSessionIdRouteImport } from './routes/_authenticated/sessions.$sessionId'
 import { Route as AuthenticatedGroupsGroupIdRouteImport } from './routes/_authenticated/groups.$groupId'
 
 const LoginRoute = LoginRouteImport.update({
@@ -55,6 +56,12 @@ const AuthenticatedStudentsStudentIdRoute =
     path: '/students/$studentId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedSessionsSessionIdRoute =
+  AuthenticatedSessionsSessionIdRouteImport.update({
+    id: '/sessions/$sessionId',
+    path: '/sessions/$sessionId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedGroupsGroupIdRoute =
   AuthenticatedGroupsGroupIdRouteImport.update({
     id: '/groups/$groupId',
@@ -67,6 +74,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/groups/$groupId': typeof AuthenticatedGroupsGroupIdRoute
+  '/sessions/$sessionId': typeof AuthenticatedSessionsSessionIdRoute
   '/students/$studentId': typeof AuthenticatedStudentsStudentIdRoute
   '/groups/': typeof AuthenticatedGroupsIndexRoute
   '/students/': typeof AuthenticatedStudentsIndexRoute
@@ -76,6 +84,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/groups/$groupId': typeof AuthenticatedGroupsGroupIdRoute
+  '/sessions/$sessionId': typeof AuthenticatedSessionsSessionIdRoute
   '/students/$studentId': typeof AuthenticatedStudentsStudentIdRoute
   '/groups': typeof AuthenticatedGroupsIndexRoute
   '/students': typeof AuthenticatedStudentsIndexRoute
@@ -87,6 +96,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/groups/$groupId': typeof AuthenticatedGroupsGroupIdRoute
+  '/_authenticated/sessions/$sessionId': typeof AuthenticatedSessionsSessionIdRoute
   '/_authenticated/students/$studentId': typeof AuthenticatedStudentsStudentIdRoute
   '/_authenticated/groups/': typeof AuthenticatedGroupsIndexRoute
   '/_authenticated/students/': typeof AuthenticatedStudentsIndexRoute
@@ -98,6 +108,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/dashboard'
     | '/groups/$groupId'
+    | '/sessions/$sessionId'
     | '/students/$studentId'
     | '/groups/'
     | '/students/'
@@ -107,6 +118,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/dashboard'
     | '/groups/$groupId'
+    | '/sessions/$sessionId'
     | '/students/$studentId'
     | '/groups'
     | '/students'
@@ -117,6 +129,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/_authenticated/dashboard'
     | '/_authenticated/groups/$groupId'
+    | '/_authenticated/sessions/$sessionId'
     | '/_authenticated/students/$studentId'
     | '/_authenticated/groups/'
     | '/_authenticated/students/'
@@ -179,6 +192,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedStudentsStudentIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/sessions/$sessionId': {
+      id: '/_authenticated/sessions/$sessionId'
+      path: '/sessions/$sessionId'
+      fullPath: '/sessions/$sessionId'
+      preLoaderRoute: typeof AuthenticatedSessionsSessionIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/groups/$groupId': {
       id: '/_authenticated/groups/$groupId'
       path: '/groups/$groupId'
@@ -192,6 +212,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedGroupsGroupIdRoute: typeof AuthenticatedGroupsGroupIdRoute
+  AuthenticatedSessionsSessionIdRoute: typeof AuthenticatedSessionsSessionIdRoute
   AuthenticatedStudentsStudentIdRoute: typeof AuthenticatedStudentsStudentIdRoute
   AuthenticatedGroupsIndexRoute: typeof AuthenticatedGroupsIndexRoute
   AuthenticatedStudentsIndexRoute: typeof AuthenticatedStudentsIndexRoute
@@ -200,6 +221,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedGroupsGroupIdRoute: AuthenticatedGroupsGroupIdRoute,
+  AuthenticatedSessionsSessionIdRoute: AuthenticatedSessionsSessionIdRoute,
   AuthenticatedStudentsStudentIdRoute: AuthenticatedStudentsStudentIdRoute,
   AuthenticatedGroupsIndexRoute: AuthenticatedGroupsIndexRoute,
   AuthenticatedStudentsIndexRoute: AuthenticatedStudentsIndexRoute,
