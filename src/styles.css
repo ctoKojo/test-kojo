@@ -15,7 +15,7 @@
 
 /* Decog is a tight display face — give it breathing room by default */
 .font-title {
-  letter-spacing: 0.06em;
+  letter-spacing: 0.15em;
 }
 
 @custom-variant dark (&:is(.dark *));
