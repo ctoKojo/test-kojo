@@ -15,7 +15,7 @@
 
 /* Decog is a tight display face — give it breathing room and keep it light */
 .font-title {
-  letter-spacing: 0.15em;
+  letter-spacing: 0.03em;
   font-weight: 400;
 }
 
