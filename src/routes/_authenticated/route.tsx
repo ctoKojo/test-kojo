@@ -1,17 +1,24 @@
 // Kojobot — Authenticated layout (auth guard + dashboard shell)
-import { createFileRoute, redirect } from "@tanstack/react-router";
-import { supabase } from "@/integrations/supabase/client";
+import { createFileRoute } from "@tanstack/react-router";
 import { DashboardShell } from "@/components/layout/DashboardShell";
+import { AuthLoadingScreen } from "@/components/shared/AuthLoadingScreen";
+import { useAuth } from "@/lib/auth/useAuth";
 
 export const Route = createFileRoute("/_authenticated")({
-  beforeLoad: async ({ location }) => {
-    const { data } = await supabase.auth.getSession();
-    if (!data.session) {
-      throw redirect({
-        to: "/login",
-        search: { redirect: location.href },
-      });
-    }
-  },
-  component: DashboardShell,
+  component: AuthenticatedRoute,
 });
+
+function AuthenticatedRoute() {
+  const { isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) {
+    return <AuthLoadingScreen />;
+  }
+
+  if (!isAuthenticated) {
+    window.location.replace("/login");
+    return <AuthLoadingScreen />;
+  }
+
+  return <DashboardShell />;
+}
