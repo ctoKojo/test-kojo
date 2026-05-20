@@ -4,6 +4,15 @@
 
 /* Kojobot Fonts loaded via <link> in src/routes/__root.tsx (Tailwind v4 hoists @imports). */
 
+@font-face {
+  font-family: "Decog";
+  src: url("/fonts/Decog.woff") format("woff"),
+       url("/fonts/Decog.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
 @custom-variant dark (&:is(.dark *));
 
 /*
