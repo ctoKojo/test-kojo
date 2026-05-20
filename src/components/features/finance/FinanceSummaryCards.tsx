@@ -27,10 +27,7 @@ export function FinanceSummaryCards({ branchId }: Props) {
 
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-      <KojoCard
-        variant="stat"
-        className="border-l-kojo-cyan flex items-start gap-3 p-5"
-      >
+      <KojoCard variant="stat" accent="cyan" className="flex items-start gap-3 p-5">
         <Wallet className="size-6 text-kojo-cyan" strokeWidth={1.5} />
         <div>
           <p className="text-xs uppercase tracking-wide text-muted-foreground">
@@ -45,14 +42,8 @@ export function FinanceSummaryCards({ branchId }: Props) {
         </div>
       </KojoCard>
 
-      <KojoCard
-        variant="stat"
-        className="border-l-destructive flex items-start gap-3 p-5"
-      >
-        <AlertCircle
-          className="size-6 text-destructive"
-          strokeWidth={1.5}
-        />
+      <KojoCard variant="stat" accent="danger" className="flex items-start gap-3 p-5">
+        <AlertCircle className="size-6 text-destructive" strokeWidth={1.5} />
         <div>
           <p className="text-xs uppercase tracking-wide text-muted-foreground">
             Overdue
@@ -66,10 +57,7 @@ export function FinanceSummaryCards({ branchId }: Props) {
         </div>
       </KojoCard>
 
-      <KojoCard
-        variant="stat"
-        className="border-l-success flex items-start gap-3 p-5"
-      >
+      <KojoCard variant="stat" accent="success" className="flex items-start gap-3 p-5">
         <CheckCircle2 className="size-6 text-success" strokeWidth={1.5} />
         <div>
           <p className="text-xs uppercase tracking-wide text-muted-foreground">
