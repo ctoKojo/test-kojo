@@ -1,4 +1,5 @@
 // Kojobot — Groups table (presentational)
+import { Link } from "@tanstack/react-router";
 import { Layers } from "lucide-react";
 import {
   Table,
@@ -109,12 +110,16 @@ export function GroupsTable({ items, isLoading, isFetching, showBranch }: Props)
                 className="border-border hover:bg-kojo-cyan/5 transition-colors"
               >
                 <TableCell>
-                  <div className="flex items-center gap-3">
+                  <Link
+                    to="/groups/$groupId"
+                    params={{ groupId: g.id }}
+                    className="flex items-center gap-3 group"
+                  >
                     <div className="flex size-9 shrink-0 items-center justify-center rounded-md bg-kojo-gradient text-white">
                       <Layers className="size-4" strokeWidth={1.75} />
                     </div>
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-medium text-foreground">
+                      <p className="truncate text-sm font-medium text-foreground group-hover:text-kojo-cyan transition-colors">
                         {g.name}
                       </p>
                       <p className="truncate text-xs text-muted-foreground capitalize">
@@ -122,7 +127,7 @@ export function GroupsTable({ items, isLoading, isFetching, showBranch }: Props)
                         {g.package_tier ? ` · ${g.package_tier}` : ""}
                       </p>
                     </div>
-                  </div>
+                  </Link>
                 </TableCell>
                 <TableCell className="text-sm text-muted-foreground">
                   {g.level?.name ?? "—"}
