@@ -135,27 +135,23 @@ export async function listLevelsForFilter(): Promise<
 export async function listTrainersForSelect(branchId?: string | null): Promise<
   Array<{ id: string; full_name: string | null }>
 > {
-  let query = supabase
+  let rolesQ = supabase
     .from("user_roles")
-    .select("user_id, profile:profiles!user_id(id, full_name)")
+    .select("user_id")
     .eq("role", "trainer")
     .is("revoked_at", null);
-  if (branchId) query = query.eq("branch_id", branchId);
-  const { data, error } = await query;
-  if (error) throw error;
-  const seen = new Set<string>();
-  const out: Array<{ id: string; full_name: string | null }> = [];
-  for (const row of (data ?? []) as Array<{
-    user_id: string;
-    profile: { id: string; full_name: string | null } | null;
-  }>) {
-    if (!row.profile || seen.has(row.user_id)) continue;
-    seen.add(row.user_id);
-    out.push(row.profile);
-  }
-  return out.sort((a, b) =>
-    (a.full_name ?? "").localeCompare(b.full_name ?? ""),
-  );
+  if (branchId) rolesQ = rolesQ.eq("branch_id", branchId);
+  const { data: rolesData, error: rolesErr } = await rolesQ;
+  if (rolesErr) throw rolesErr;
+  const ids = Array.from(new Set((rolesData ?? []).map((r) => r.user_id)));
+  if (ids.length === 0) return [];
+  const { data: profs, error: profErr } = await supabase
+    .from("profiles")
+    .select("id, full_name")
+    .in("id", ids)
+    .order("full_name");
+  if (profErr) throw profErr;
+  return profs ?? [];
 }
 
 export interface CreateGroupInput {
