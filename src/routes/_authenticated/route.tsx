@@ -1,5 +1,6 @@
 // Kojobot — Authenticated layout (auth guard + dashboard shell)
-import { createFileRoute } from "@tanstack/react-router";
+import { useEffect } from "react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { DashboardShell } from "@/components/layout/DashboardShell";
 import { AuthLoadingScreen } from "@/components/shared/AuthLoadingScreen";
 import { useAuth } from "@/lib/auth/useAuth";
@@ -10,13 +11,19 @@ export const Route = createFileRoute("/_authenticated")({
 
 function AuthenticatedRoute() {
   const { isAuthenticated, isLoading } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      navigate({ to: "/login", replace: true });
+    }
+  }, [isAuthenticated, isLoading, navigate]);
 
   if (isLoading) {
     return <AuthLoadingScreen />;
   }
 
   if (!isAuthenticated) {
-    window.location.replace("/login");
     return <AuthLoadingScreen />;
   }
 
