@@ -1,24 +1,33 @@
-// Kojobot — Dashboard home (mock stats per Phase 1 plan)
+// Kojobot — Dashboard home with real KPI stats
 import { createFileRoute } from "@tanstack/react-router";
 import { Users, Layers, Video, Wallet } from "lucide-react";
 import { KojoCard } from "@/components/ui/kojo/kojo-card";
 import { useAuth } from "@/lib/auth/useAuth";
+import { useDashboardStats } from "@/hooks/queries/useDashboardStats";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   component: DashboardPage,
 });
 
-const STATS = [
-  { label: "Total Students", value: "—", icon: Users, accent: "cyan" as const },
-  { label: "Active Groups", value: "—", icon: Layers, accent: "violet" as const },
-  { label: "Today Sessions", value: "—", icon: Video, accent: "success" as const },
-  { label: "Pending Payments", value: "—", icon: Wallet, accent: "warning" as const },
+const STAT_CONFIG = [
+  { label: "Total Students", key: "totalStudents" as const, icon: Users, accent: "cyan" as const },
+  { label: "Active Groups", key: "activeGroups" as const, icon: Layers, accent: "violet" as const },
+  { label: "Today Sessions", key: "todaySessions" as const, icon: Video, accent: "success" as const },
+  { label: "Pending Payments", key: "pendingPayments" as const, icon: Wallet, accent: "warning" as const },
 ];
 
-function DashboardPage() {
-  const { user, roles, isLoading } = useAuth();
+function formatCount(n: number): string {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
+  return String(n);
+}
 
-  const subtitle = isLoading
+function DashboardPage() {
+  const { user, roles, isLoading: authLoading } = useAuth();
+  const { data: stats, isLoading: statsLoading } = useDashboardStats(!authLoading);
+
+  const subtitle = authLoading
     ? "Loading roles…"
     : roles.length > 0
       ? `Signed in as ${roles.join(", ").replace(/_/g, " ")}`
@@ -34,8 +43,11 @@ function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {STATS.map((stat) => {
+        {STAT_CONFIG.map((stat) => {
           const Icon = stat.icon;
+          const value = stats?.[stat.key];
+          const isLoading = statsLoading || value === undefined;
+
           return (
             <KojoCard key={stat.label} variant="stat" accent={stat.accent}>
               <div className="flex items-start justify-between">
@@ -43,9 +55,13 @@ function DashboardPage() {
                   <p className="text-xs uppercase tracking-wider text-muted-foreground font-medium">
                     {stat.label}
                   </p>
-                  <p className="mt-2 font-title text-3xl font-bold text-foreground">
-                    {stat.value}
-                  </p>
+                  {isLoading ? (
+                    <Skeleton className="mt-2 h-9 w-16" />
+                  ) : (
+                    <p className="mt-2 font-title text-3xl text-foreground">
+                      {formatCount(value)}
+                    </p>
+                  )}
                 </div>
                 <Icon className="size-5 text-muted-foreground" strokeWidth={1.5} />
               </div>
