@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/select";
 import { listBranchesForFilter, listAgeGroupsForFilter } from "@/lib/api/students";
 import { useAuth } from "@/lib/auth/useAuth";
-import { createStudentFn } from "@/lib/api/students.functions";
+import { createStudentFn, type CreateStudentInput } from "@/lib/api/students.functions";
 import { studentsKeys } from "@/hooks/queries/useStudents";
 
 interface Props {
@@ -74,8 +74,7 @@ export function AddStudentDialog({ open, onOpenChange }: Props) {
   });
 
   const mutation = useMutation({
-    mutationFn: (data: Parameters<typeof createStudent>[0]["data"]) =>
-      createStudent({ data }),
+    mutationFn: (data: CreateStudentInput) => createStudent({ data }),
     onSuccess: () => {
       toast.success("Student created");
       qc.invalidateQueries({ queryKey: studentsKeys.all });
