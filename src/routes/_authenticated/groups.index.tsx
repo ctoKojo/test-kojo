@@ -11,6 +11,7 @@ import {
 } from "@/components/features/groups/GroupsFilters";
 import { GroupsTable } from "@/components/features/groups/GroupsTable";
 import { GroupsPagination } from "@/components/features/groups/GroupsPagination";
+import { AddGroupDialog } from "@/components/features/groups/AddGroupDialog";
 
 export const Route = createFileRoute("/_authenticated/groups/")({
   component: GroupsPage,
@@ -21,6 +22,8 @@ const PAGE_SIZE = 25;
 function GroupsPage() {
   const { hasRole } = useAuth();
   const isSuperAdmin = hasRole("super_admin");
+  const canCreate = hasRole("super_admin") || hasRole("branch_admin") || hasRole("reception");
+  const [addOpen, setAddOpen] = useState(false);
 
   const [filters, setFilters] = useState<GroupsFiltersValue>({
     search: "",
@@ -82,8 +85,9 @@ function GroupsPage() {
           <Button
             size="sm"
             className="bg-kojo-gradient text-white border-transparent hover:opacity-90"
-            disabled
-            title="Coming soon"
+            disabled={!canCreate}
+            title={canCreate ? "Create new group" : "You don't have permission"}
+            onClick={() => setAddOpen(true)}
           >
             <Plus className="mr-2 size-4" strokeWidth={1.5} />
             Add group
@@ -118,6 +122,8 @@ function GroupsPage() {
           onPageChange={setPage}
         />
       )}
+
+      <AddGroupDialog open={addOpen} onOpenChange={setAddOpen} />
     </div>
   );
 }
