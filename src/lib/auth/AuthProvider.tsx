@@ -83,26 +83,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     // 1) Subscribe FIRST (avoid missing the initial event)
+    let lastUserId: string | null = null;
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, newSession) => {
+    } = supabase.auth.onAuthStateChange((event, newSession) => {
       setSession(newSession);
       setUser(newSession?.user ?? null);
 
+      const newUserId = newSession?.user?.id ?? null;
+      const userChanged = newUserId !== lastUserId;
+      lastUserId = newUserId;
+
       // Defer DB call to avoid deadlocks inside the callback
-      if (newSession?.user) {
+      // Only reload profile when the user actually changes (skip TOKEN_REFRESHED)
+      if (newSession?.user && userChanged) {
         setTimeout(() => {
           loadProfile(newSession.user.id);
         }, 0);
-      } else {
+      } else if (!newSession?.user) {
         setRoles([]);
         setBranchIds([]);
         setActiveBranchId(null);
       }
 
-      // Invalidate router + queries on auth change
-      router.invalidate();
-      queryClient.invalidateQueries();
+      // Only invalidate on real auth transitions — not on every token refresh
+      if (event === "SIGNED_IN" || event === "SIGNED_OUT") {
+        router.invalidate();
+        queryClient.invalidateQueries();
+      }
     });
 
     // 2) Then check existing session
@@ -110,6 +118,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setSession(existing);
       setUser(existing?.user ?? null);
       if (existing?.user) {
+        lastUserId = existing.user.id;
         await loadProfile(existing.user.id);
       }
       setIsLoading(false);
