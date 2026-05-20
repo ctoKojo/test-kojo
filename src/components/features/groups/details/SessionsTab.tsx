@@ -1,5 +1,6 @@
 // Kojobot — Group sessions tab
 import { Calendar } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 import {
   Table,
   TableBody,
@@ -87,13 +88,21 @@ export function SessionsTab({ rows, isLoading }: Props) {
           {rows.map((s) => (
             <TableRow
               key={s.id}
-              className="border-border hover:bg-kojo-cyan/5 transition-colors"
+              className="border-border hover:bg-kojo-cyan/5 transition-colors cursor-pointer"
             >
               <TableCell className="font-medium text-foreground">
-                #{s.session_number}
+                <Link
+                  to="/sessions/$sessionId"
+                  params={{ sessionId: s.id }}
+                  className="hover:text-kojo-cyan"
+                >
+                  #{s.session_number}
+                </Link>
               </TableCell>
               <TableCell className="text-sm text-muted-foreground">
-                {fmtDateTime(s.scheduled_at_utc)}
+                <Link to="/sessions/$sessionId" params={{ sessionId: s.id }}>
+                  {fmtDateTime(s.scheduled_at_utc)}
+                </Link>
               </TableCell>
               <TableCell className="text-sm text-muted-foreground">
                 {s.trainer?.full_name ?? (
