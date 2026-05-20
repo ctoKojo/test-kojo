@@ -131,9 +131,73 @@ export async function listLevelsForFilter(): Promise<
   return data ?? [];
 }
 
+/** List trainers for the trainer dropdown when creating a group. */
+export async function listTrainersForSelect(branchId?: string | null): Promise<
+  Array<{ id: string; full_name: string | null }>
+> {
+  let query = supabase
+    .from("user_roles")
+    .select("user_id, profile:profiles!user_id(id, full_name)")
+    .eq("role", "trainer")
+    .is("revoked_at", null);
+  if (branchId) query = query.eq("branch_id", branchId);
+  const { data, error } = await query;
+  if (error) throw error;
+  const seen = new Set<string>();
+  const out: Array<{ id: string; full_name: string | null }> = [];
+  for (const row of (data ?? []) as Array<{
+    user_id: string;
+    profile: { id: string; full_name: string | null } | null;
+  }>) {
+    if (!row.profile || seen.has(row.user_id)) continue;
+    seen.add(row.user_id);
+    out.push(row.profile);
+  }
+  return out.sort((a, b) =>
+    (a.full_name ?? "").localeCompare(b.full_name ?? ""),
+  );
+}
+
+export interface CreateGroupInput {
+  name: string;
+  branch_id: string;
+  level_id: string;
+  trainer_id: string;
+  package_tier: "squad" | "core" | "x";
+  subscription_type: "offline" | "online" | "hybrid";
+  online_link?: string | null;
+  max_students: number;
+  starts_on?: string | null;
+}
+
+export async function createGroup(input: CreateGroupInput): Promise<{ id: string }> {
+  const payload = {
+    name: input.name.trim(),
+    branch_id: input.branch_id,
+    level_id: input.level_id,
+    trainer_id: input.trainer_id,
+    package_tier: input.package_tier,
+    subscription_type: input.subscription_type,
+    online_link: input.subscription_type === "offline" ? null : input.online_link ?? null,
+    max_students: input.max_students,
+    starts_on: input.starts_on || null,
+    status: "active" as const,
+  };
+  const { data, error } = await supabase
+    .from("groups")
+    .insert(payload)
+    .select("id")
+    .single();
+  if (error) throw error;
+  return { id: data.id };
+}
+
 export const GROUP_STATUSES = [
   "pending",
   "active",
   "completed",
   "cancelled",
 ] as const;
+
+export const PACKAGE_TIERS = ["squad", "core", "x"] as const;
+export const SUBSCRIPTION_TYPES = ["offline", "online", "hybrid"] as const;
