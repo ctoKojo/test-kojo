@@ -78,8 +78,8 @@
   --color-warning: var(--warning);
   --color-info: var(--info);
 
-  /* Fonts: font-title, font-main, font-arabic */
-  --font-title: 'Orbitron', monospace;
+  /* Fonts: font-title (Decog) for headings + big numbers, font-main for body */
+  --font-title: 'Decog', 'Orbitron', monospace;
   --font-main: 'Poppins', sans-serif;
   --font-arabic: 'Cairo', sans-serif;
   --font-sans: 'Poppins', sans-serif;
