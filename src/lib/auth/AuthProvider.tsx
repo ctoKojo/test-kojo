@@ -120,6 +120,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (existing?.user) {
         lastUserId = existing.user.id;
         await loadProfile(existing.user.id);
+      } else {
+        setRoles([]);
+        setBranchIds([]);
+        setActiveBranchId(null);
       }
       setIsLoading(false);
     });
@@ -139,12 +143,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 
   const signOut = useCallback(async () => {
+    setIsLoading(true);
     await supabase.auth.signOut();
     setSession(null);
     setUser(null);
     setRoles([]);
     setBranchIds([]);
     setActiveBranchId(null);
+    setIsLoading(false);
   }, []);
 
   const value: AuthState = {
